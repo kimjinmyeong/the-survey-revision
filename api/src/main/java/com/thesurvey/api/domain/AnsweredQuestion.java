@@ -23,7 +23,7 @@ public class AnsweredQuestion {
 
     @MapsId("surveyId")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "survey_id")
+    @JoinColumn(name = "survey_id", columnDefinition = "uuid")
     public Survey survey;
 
     @MapsId("userId")

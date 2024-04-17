@@ -26,7 +26,7 @@ public class Question {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("surveyId")
-    @JoinColumn(name = "survey_id")
+    @JoinColumn(name = "survey_id", columnDefinition = "uuid")
     public Survey survey;
 
     @ManyToOne(fetch = FetchType.LAZY)
