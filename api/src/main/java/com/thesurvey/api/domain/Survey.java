@@ -52,29 +52,20 @@ public class Survey extends BaseTimeEntity {
     )
     private List<Question> questions;
 
-    @NotNull
-    @Positive
-    @Column(name = "author_id", updatable = false, nullable = false)
+    @Column(name = "author_id", updatable = false)
     private Long authorId;
 
-    @NotBlank
-    @Size(max = 100)
-    @Column(name = "title", nullable = false)
+    @Column(name = "title")
     private String title;
 
-    @NotBlank
-    @Size(max = 255)
     @Column(name = "description", nullable = true)
     private String description;
 
-    @NotNull
-    @Column(name = "started_date", nullable = false)
+    @Column(name = "started_date")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime startedDate;
 
-    @NotNull
-    @Future
-    @Column(name = "ended_date", nullable = false)
+    @Column(name = "ended_date")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime endedDate;
 
