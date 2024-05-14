@@ -384,8 +384,6 @@ public class SurveyControllerTest extends BaseControllerTest {
         Long userId = UserUtil.getUserIdFromAuthentication(authentication);
 
         // when
-        // FIXME: deleting survey twice works fine but this is not the expected one.
-        surveyService.deleteSurvey(authentication, surveyId);
         mockMvc.perform(delete("/surveys/" + surveyId)).andExpect(status().isNoContent());
 
         // then

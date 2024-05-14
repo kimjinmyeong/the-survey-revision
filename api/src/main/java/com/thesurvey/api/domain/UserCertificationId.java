@@ -3,8 +3,8 @@ package com.thesurvey.api.domain;
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
 import java.io.Serializable;
 import java.util.Objects;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
+import javax.persistence.*;
+
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,20 +15,20 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserCertificationId implements Serializable {
 
-    @Column(name = "user_id")
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private User user;
 
     /*
      * the value of id is set to the index of EnumTypeEntity.CertificationType.
      * the value of id : CertificationType
      * 0: NONE, 1: KAKAO, 2: NAVER, 3: GOOGLE, 4: WEBMAIL, 5: DRIVER_LICENSE, 6: IDENTITY_CARD
      */
-    @Column(name = "certification_type")
     private CertificationType certificationType;
 
     @Builder
-    public UserCertificationId(Long userId, CertificationType certificationType) {
-        this.userId = userId;
+    public UserCertificationId(User user, CertificationType certificationType) {
+        this.user = user;
         this.certificationType = certificationType;
     }
 
@@ -41,13 +41,13 @@ public class UserCertificationId implements Serializable {
             return false;
         }
         UserCertificationId that = (UserCertificationId) o;
-        return Objects.equals(userId, that.userId) && Objects.equals(certificationType,
-            that.certificationType);
+        return Objects.equals(user, that.user) && Objects.equals(certificationType,
+                that.certificationType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, certificationType);
+        return Objects.hash(user, certificationType);
     }
 
 }

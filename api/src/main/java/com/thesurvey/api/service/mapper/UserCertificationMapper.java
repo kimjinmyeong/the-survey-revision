@@ -27,7 +27,7 @@ public class UserCertificationMapper {
 
         List<CertificationInfo<CertificationType>> certificationInfoList = new ArrayList<>();
         for (UserCertification userCertification : userCertificationList) {
-            CertificationType certificationType = userCertification.getCertificationType();
+            CertificationType certificationType = userCertification.getUserCertificationId().getCertificationType();
             certificationInfoList.add(getCertificationInfo(certificationType, userCertification.getExpirationDate()));
         }
         return UserCertificationListDto.builder()

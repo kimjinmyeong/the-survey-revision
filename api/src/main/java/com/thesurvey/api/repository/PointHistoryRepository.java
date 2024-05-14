@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PointHistoryRepository extends JpaRepository<PointHistory, PointHistoryId> {
 
-    @Query(value = "SELECT ph.point FROM PointHistory ph WHERE ph.user.userId = :userId ORDER BY "
-        + "ph.transactionDate DESC")
+    @Query(value = "SELECT ph.point FROM PointHistory ph WHERE ph.pointHistoryId.user.userId = :userId ORDER BY "
+        + "ph.pointHistoryId.transactionDate DESC")
     List<Integer> findPointHistoryByUserId(@Param("userId") Long userId);
 }

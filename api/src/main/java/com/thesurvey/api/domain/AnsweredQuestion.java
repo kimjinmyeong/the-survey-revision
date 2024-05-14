@@ -1,13 +1,6 @@
 package com.thesurvey.api.domain;
 
-import javax.persistence.Column;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.MapsId;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.validation.constraints.Size;
 
 import lombok.AccessLevel;
@@ -21,22 +14,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AnsweredQuestion {
 
-    @MapsId("surveyId")
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "survey_id", columnDefinition = "uuid")
-    public Survey survey;
-
-    @MapsId("userId")
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    public User user;
-
-    @MapsId("questionBankId")
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_bank_id")
-    public QuestionBank questionBank;
-
     @EmbeddedId
+    @AttributeOverride(name = "answerId", column = @Column(name = "answer_id"))
     private AnsweredQuestionId answeredQuestionId;
 
     @Column(name = "single_choice", nullable = true)
@@ -56,17 +35,14 @@ public class AnsweredQuestion {
     @Builder
     public AnsweredQuestion(Long singleChoice, Long multipleChoice, String shortAnswer,
         String longAnswer, Survey survey, User user, QuestionBank questionBank) {
-        this.user = user;
-        this.survey = survey;
-        this.questionBank = questionBank;
         this.shortAnswer = shortAnswer;
         this.longAnswer = longAnswer;
         this.singleChoice = singleChoice;
         this.multipleChoice = multipleChoice;
         this.answeredQuestionId = AnsweredQuestionId.builder()
-            .surveyId(survey.getSurveyId())
-            .userId(user.getUserId())
-            .questionBankId(questionBank.getQuestionBankId())
+            .survey(survey)
+            .user(user)
+            .questionBank(questionBank)
             .build();
     }
 }

@@ -187,13 +187,13 @@ public class SurveyService {
             throw new BadRequestExceptionMapper(ErrorMessage.SURVEY_ALREADY_STARTED);
         }
 
-        answeredQuestionService.deleteAnswer(surveyId);
-        surveyRepository.delete(survey);
-        participationService.deleteParticipation(surveyId);
-        questionService.deleteQuestion(surveyId);
-
         int surveyCreatePoints = pointUtil.calculateSurveyCreatePoints(survey.getSurveyId());
         pointHistoryService.savePointHistory(user, surveyCreatePoints);
+        participationService.deleteParticipation(surveyId);
+        answeredQuestionService.deleteAnswer(surveyId);
+        questionService.deleteQuestion(surveyId);
+        surveyRepository.delete(survey);
+
     }
 
     @Transactional

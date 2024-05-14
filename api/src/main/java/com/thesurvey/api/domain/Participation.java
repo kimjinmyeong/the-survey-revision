@@ -2,14 +2,7 @@ package com.thesurvey.api.domain;
 
 import java.time.LocalDateTime;
 
-import javax.persistence.Column;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.MapsId;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
@@ -24,17 +17,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Participation extends BaseTimeEntity {
 
-    @MapsId("surveyId")
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "survey_id", columnDefinition = "uuid")
-    public Survey survey;
-
-    @MapsId("userId")
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    public User user;
-
     @EmbeddedId
+    @AttributeOverride(name = "certificationType", column = @Column(name = "certification_type", insertable = false, updatable = false))
     private ParticipationId participationId;
 
     @Column(name = "participate_date", nullable = false)
@@ -45,22 +29,16 @@ public class Participation extends BaseTimeEntity {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime submittedDate;
 
-    @Column(name = "certification_type", insertable = false, updatable = false)
-    private CertificationType certificationType;
-
     @Builder
     public Participation(Survey survey, User user,
         LocalDateTime participateDate, LocalDateTime submittedDate,
         CertificationType certificationType) {
-        this.survey = survey;
-        this.user = user;
         this.participateDate = participateDate;
         this.submittedDate = submittedDate;
-        this.certificationType = certificationType;
         this.participationId = ParticipationId.builder()
             .certificationType(certificationType)
-            .surveyId(survey.getSurveyId())
-            .userId(user.getUserId())
+            .survey(survey)
+            .user(user)
             .build();
     }
 

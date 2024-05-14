@@ -38,7 +38,7 @@ public class Survey extends BaseTimeEntity {
     private UUID surveyId;
 
     @OneToMany(
-        mappedBy = "survey",
+        mappedBy = "participationId.survey",
         cascade = CascadeType.ALL,
         orphanRemoval = true
     )
@@ -46,7 +46,7 @@ public class Survey extends BaseTimeEntity {
 
     @Size(min = 1)
     @OneToMany(
-        mappedBy = "survey",
+        mappedBy = "questionId.survey",
         cascade = CascadeType.PERSIST,
         orphanRemoval = true
     )

@@ -4,8 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
+import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AccessLevel;
@@ -18,17 +17,16 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PointHistoryId implements Serializable {
 
-    @Column(name = "transaction_date")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime transactionDate;
 
-    @Column(name = "user_id")
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Builder
-    public PointHistoryId(LocalDateTime transactionDate, Long userId) {
+    public PointHistoryId(LocalDateTime transactionDate, User user) {
         this.transactionDate = transactionDate;
-        this.userId = userId;
+        this.user = user;
     }
 
     @Override
@@ -40,12 +38,12 @@ public class PointHistoryId implements Serializable {
             return false;
         }
         PointHistoryId that = (PointHistoryId) o;
-        return Objects.equals(transactionDate, that.transactionDate) && Objects.equals(userId,
-            that.userId);
+        return Objects.equals(transactionDate, that.transactionDate) && Objects.equals(user,
+            that.user);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(transactionDate, userId);
+        return Objects.hash(transactionDate, user);
     }
 }

@@ -4,8 +4,7 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
+import javax.persistence.*;
 
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
 import lombok.AccessLevel;
@@ -23,20 +22,21 @@ public class ParticipationId implements Serializable {
      * the value of id : CertificationType
      * 0: NONE, 1: KAKAO, 2: NAVER, 3: GOOGLE, 4: WEBMAIL, 5: DRIVER_LICENSE, 6: IDENTITY_CARD
      */
-    @Column(name = "certification_type")
     private CertificationType certificationType;
 
-    @Column(name = "survey_id")
-    private UUID surveyId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "survey_id", columnDefinition = "uuid")
+    public Survey survey;
 
-    @Column(name = "user_id")
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    public User user;
 
     @Builder
-    public ParticipationId(CertificationType certificationType, UUID surveyId, Long userId) {
+    public ParticipationId(CertificationType certificationType, Survey survey, User user) {
         this.certificationType = certificationType;
-        this.surveyId = surveyId;
-        this.userId = userId;
+        this.survey = survey;
+        this.user = user;
     }
 
     @Override
@@ -48,11 +48,11 @@ public class ParticipationId implements Serializable {
             return false;
         }
         ParticipationId that = (ParticipationId) o;
-        return Objects.equals(surveyId, that.surveyId) && Objects.equals(userId, that.userId);
+        return Objects.equals(survey, that.survey) && Objects.equals(user, that.user);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(surveyId, userId);
+        return Objects.hash(survey, user);
     }
 }
