@@ -13,19 +13,19 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AnsweredQuestionRepository extends
     JpaRepository<AnsweredQuestion, AnsweredQuestionId> {
-    @Query("SELECT aq FROM AnsweredQuestion aq WHERE aq.answeredQuestionId.surveyId = :surveyId")
+    @Query("SELECT aq FROM AnsweredQuestion aq WHERE aq.answeredQuestionId.survey.surveyId = :surveyId")
     List<AnsweredQuestion> findAllBySurveyId(UUID surveyId);
 
-    @Query("SELECT aq FROM AnsweredQuestion aq WHERE aq.answeredQuestionId.questionBankId = :questionBankId")
+    @Query("SELECT aq FROM AnsweredQuestion aq WHERE aq.answeredQuestionId.questionBank.questionBankId = :questionBankId")
     List<AnsweredQuestion> findAllByQuestionBankId(Long questionBankId);
 
-    @Query("SELECT CASE WHEN COUNT(aq) > 0 THEN true ELSE false END FROM AnsweredQuestion aq WHERE aq.answeredQuestionId.userId = :userId AND aq.answeredQuestionId.surveyId = :surveyId")
+    @Query("SELECT CASE WHEN COUNT(aq) > 0 THEN true ELSE false END FROM AnsweredQuestion aq WHERE aq.answeredQuestionId.user.userId = :userId AND aq.answeredQuestionId.survey.surveyId = :surveyId")
     boolean existsByUserIdAndSurveyId(Long userId, UUID surveyId);
 
-    @Query("SELECT aq.singleChoice, COUNT(aq) FROM AnsweredQuestion aq WHERE aq.questionBank.questionBankId = :questionBankId GROUP BY aq.singleChoice")
+    @Query("SELECT aq.singleChoice, COUNT(aq) FROM AnsweredQuestion aq WHERE aq.answeredQuestionId.questionBank.questionBankId = :questionBankId GROUP BY aq.singleChoice")
     List<Long[]> countSingleChoiceByQuestionBankId(Long questionBankId);
 
-    @Query("SELECT aq.multipleChoice, COUNT(aq) FROM AnsweredQuestion aq WHERE aq.questionBank.questionBankId = :questionBankId GROUP BY aq.multipleChoice")
+    @Query("SELECT aq.multipleChoice, COUNT(aq) FROM AnsweredQuestion aq WHERE aq.answeredQuestionId.questionBank.questionBankId = :questionBankId GROUP BY aq.multipleChoice")
     List<Long[]> countMultipleChoiceByQuestionBankId(Long questionBankId);
 
 }

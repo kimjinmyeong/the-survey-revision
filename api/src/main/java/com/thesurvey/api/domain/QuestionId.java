@@ -2,10 +2,8 @@ package com.thesurvey.api.domain;
 
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.UUID;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
+import javax.persistence.*;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -17,16 +15,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class QuestionId implements Serializable {
 
-    @Column(name = "survey_id", columnDefinition = "uuid")
-    private UUID surveyId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "survey_id")
+    public Survey survey;
 
-    @Column(name = "question_bank_id")
-    private Long questionBankId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_bank_id")
+    public QuestionBank questionBank;
 
     @Builder
-    public QuestionId(UUID surveyId, Long questionBankId) {
-        this.surveyId = surveyId;
-        this.questionBankId = questionBankId;
+    public QuestionId(Survey survey, QuestionBank questionBank) {
+        this.survey = survey;
+        this.questionBank = questionBank;
     }
 
     @Override
@@ -38,13 +38,13 @@ public class QuestionId implements Serializable {
             return false;
         }
         QuestionId that = (QuestionId) o;
-        return Objects.equals(surveyId, that.surveyId) && Objects.equals(questionBankId,
-            that.questionBankId);
+        return Objects.equals(survey, that.survey) && Objects.equals(questionBank,
+            that.questionBank);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(surveyId, questionBankId);
+        return Objects.hash(survey, questionBank);
     }
 
 }

@@ -4,8 +4,7 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
+import javax.persistence.*;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -17,23 +16,25 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AnsweredQuestionId implements Serializable {
 
-    @Column(name = "answer_id")
     private UUID answerId = UUID.randomUUID();
 
-    @Column(name = "user_id")
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "survey_id", columnDefinition = "uuid")
+    public Survey survey;
 
-    @Column(name = "survey_id")
-    private UUID surveyId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    public User user;
 
-    @Column(name = "question_bank_id")
-    private Long questionBankId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_bank_id")
+    public QuestionBank questionBank;
 
     @Builder
-    public AnsweredQuestionId(Long userId, UUID surveyId, Long questionBankId) {
-        this.userId = userId;
-        this.surveyId = surveyId;
-        this.questionBankId = questionBankId;
+    public AnsweredQuestionId(User user, Survey survey, QuestionBank questionBank) {
+        this.user = user;
+        this.survey = survey;
+        this.questionBank = questionBank;
     }
 
     @Override
@@ -45,13 +46,13 @@ public class AnsweredQuestionId implements Serializable {
             return false;
         }
         AnsweredQuestionId that = (AnsweredQuestionId) o;
-        return Objects.equals(userId, that.userId) && Objects.equals(surveyId, that.surveyId)
-            && Objects.equals(questionBankId, that.questionBankId);
+        return Objects.equals(user, that.user) && Objects.equals(survey, that.survey)
+            && Objects.equals(questionBank, that.questionBank);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, surveyId, questionBankId);
+        return Objects.hash(user, survey, questionBank);
     }
 
 }

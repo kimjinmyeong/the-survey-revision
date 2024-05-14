@@ -11,10 +11,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserCertificationRepository extends JpaRepository<UserCertification, Long> {
 
-    @Query("SELECT uc.certificationType FROM UserCertification uc WHERE uc.userCertificationId.userId = :userId")
+    @Query("SELECT uc.userCertificationId.certificationType FROM UserCertification uc WHERE uc.userCertificationId.user.userId = :userId")
     List<Integer> findUserCertificationTypeByUserId(Long userId);
 
-    @Query("SELECT uc FROM UserCertification uc WHERE uc.userCertificationId.userId = :userId")
+    @Query("SELECT uc FROM UserCertification uc WHERE uc.userCertificationId.user.userId = :userId")
     List<UserCertification> findUserCertificationByUserId(Long userId);
 
     void deleteByExpirationDateLessThanEqual(LocalDateTime nowDate);

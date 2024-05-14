@@ -37,7 +37,7 @@ public class QuestionBank extends BaseTimeEntity {
 
     @Size(min = 1)
     @OneToMany(
-        mappedBy = "questionBank",
+        mappedBy = "questionId.questionBank",
         cascade = CascadeType.PERSIST,
         orphanRemoval = true
     )
