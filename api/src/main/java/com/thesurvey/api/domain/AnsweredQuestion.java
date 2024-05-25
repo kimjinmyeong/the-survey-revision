@@ -1,12 +1,12 @@
 package com.thesurvey.api.domain;
 
-import javax.persistence.*;
-import javax.validation.constraints.Size;
-
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+import javax.validation.constraints.Size;
 
 @Entity
 @Table(name = "answered_question")
@@ -14,9 +14,21 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AnsweredQuestion {
 
-    @EmbeddedId
-    @AttributeOverride(name = "answerId", column = @Column(name = "answer_id"))
-    private AnsweredQuestionId answeredQuestionId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "answered_question_id", updatable = false, nullable = false)
+    private Long answeredQuestionId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumns({
+            @JoinColumn(name = "survey_id", referencedColumnName = "survey_id"),
+            @JoinColumn(name = "question_bank_id", referencedColumnName = "question_bank_id")
+    })
+    private Question question;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Column(name = "single_choice", nullable = true)
     private Long singleChoice;
@@ -34,15 +46,12 @@ public class AnsweredQuestion {
 
     @Builder
     public AnsweredQuestion(Long singleChoice, Long multipleChoice, String shortAnswer,
-        String longAnswer, Survey survey, User user, QuestionBank questionBank) {
+        String longAnswer, Question question, User user) {
         this.shortAnswer = shortAnswer;
         this.longAnswer = longAnswer;
         this.singleChoice = singleChoice;
         this.multipleChoice = multipleChoice;
-        this.answeredQuestionId = AnsweredQuestionId.builder()
-            .survey(survey)
-            .user(user)
-            .questionBank(questionBank)
-            .build();
+        this.question = question;
+        this.user = user;
     }
 }
