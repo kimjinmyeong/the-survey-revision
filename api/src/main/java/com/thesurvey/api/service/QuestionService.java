@@ -1,9 +1,5 @@
 package com.thesurvey.api.service;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 import com.thesurvey.api.domain.Question;
 import com.thesurvey.api.domain.QuestionBank;
 import com.thesurvey.api.domain.QuestionOption;
@@ -22,10 +18,13 @@ import com.thesurvey.api.service.mapper.QuestionBankMapper;
 import com.thesurvey.api.service.mapper.QuestionMapper;
 import com.thesurvey.api.service.mapper.QuestionOptionMapper;
 import com.thesurvey.api.util.StringUtil;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,12 +45,12 @@ public class QuestionService {
     private final QuestionOptionRepository questionOptionRepository;
 
     @Transactional(readOnly = true)
-    public List<QuestionBank> getAllQuestionBankBySurveyId(UUID surveyId) {
+    public List<QuestionBank> getAllQuestionBankBySurveyId(Long surveyId) {
         return questionBankRepository.findAllBySurveyId(surveyId);
     }
 
     @Transactional(readOnly = true)
-    public List<QuestionBankResponseDto> getQuestionBankInfoDtoListBySurveyId(UUID surveyId) {
+    public List<QuestionBankResponseDto> getQuestionBankInfoDtoListBySurveyId(Long surveyId) {
         return questionBankRepository.findAllBySurveyId(surveyId)
             .stream()
             .map(questionBank -> {
@@ -92,17 +91,16 @@ public class QuestionService {
     }
 
     @Transactional
-    public void updateQuestion(UUID surveyId,
+    public void updateQuestion(Long surveyId,
         List<QuestionBankUpdateRequestDto> questionBankUpdateRequestDtoList) {
         for (QuestionBankUpdateRequestDto questionBankUpdateRequestDto : questionBankUpdateRequestDtoList) {
             QuestionBank questionBank = questionBankRepository.findByQuestionBankId(
                 questionBankUpdateRequestDto.getQuestionBankId()).orElseThrow(
                 () -> new BadRequestExceptionMapper(ErrorMessage.QUESTION_BANK_NOT_FOUND));
 
-            // check if the question is included in the survey.
-            if (questionRepository.notExistsBySurveyIdAndQuestionBankId(surveyId,
-                questionBank.getQuestionBankId())) {
-                throw new BadRequestExceptionMapper(ErrorMessage.NOT_SURVEY_QUESTION);
+            Optional<Question> question = questionRepository.findBySurveyIdAndQuestionBankId(surveyId, questionBank.getQuestionBankId());
+            if (question.isEmpty()) {
+                throw new BadRequestExceptionMapper(ErrorMessage.QUESTION_NOT_FOUND);
             }
 
             questionBank.changeTitle(StringUtil.trim(questionBankUpdateRequestDto.getTitle()));
@@ -113,15 +111,11 @@ public class QuestionService {
                 questionBank.changeQuestionType(questionBankUpdateRequestDto.getQuestionType());
             }
 
-            Question question = questionRepository.findByQuestionBankId(
-                questionBank.getQuestionBankId()).orElseThrow(() -> new BadRequestExceptionMapper(
-                ErrorMessage.QUESTION_NOT_FOUND));
-
             if (questionBankUpdateRequestDto.getIsRequired() != null) {
-                question.changeIsRequired(questionBankUpdateRequestDto.getIsRequired());
+                question.get().changeIsRequired(questionBankUpdateRequestDto.getIsRequired());
             }
             if (questionBankUpdateRequestDto.getQuestionNo() != null) {
-                question.changeQuestionNo(questionBankUpdateRequestDto.getQuestionNo());
+                question.get().changeQuestionNo(questionBankUpdateRequestDto.getQuestionNo());
             }
             if (questionBankUpdateRequestDto.getQuestionOptions() != null) {
                 questionOptionService.updateQuestionOption(questionBank.getQuestionBankId(),
@@ -131,7 +125,7 @@ public class QuestionService {
     }
 
     @Transactional
-    public void deleteQuestion(UUID surveyId) {
+    public void deleteQuestion(Long surveyId) {
         List<Question> questionList = questionRepository.findAllBySurveyId(surveyId);
         questionRepository.deleteAll(questionList);
     }

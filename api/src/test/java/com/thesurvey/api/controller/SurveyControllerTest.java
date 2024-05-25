@@ -1,11 +1,5 @@
 package com.thesurvey.api.controller;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.UUID;
-
 import com.thesurvey.api.domain.AnsweredQuestion;
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
 import com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType;
@@ -21,12 +15,7 @@ import com.thesurvey.api.dto.request.survey.SurveyUpdateRequestDto;
 import com.thesurvey.api.dto.request.user.UserCertificationUpdateRequestDto;
 import com.thesurvey.api.dto.request.user.UserLoginRequestDto;
 import com.thesurvey.api.dto.request.user.UserRegisterRequestDto;
-import com.thesurvey.api.repository.ParticipationRepository;
-import com.thesurvey.api.repository.QuestionBankRepository;
-import com.thesurvey.api.repository.QuestionOptionRepository;
-import com.thesurvey.api.repository.QuestionRepository;
-import com.thesurvey.api.repository.SurveyRepository;
-import com.thesurvey.api.repository.UserRepository;
+import com.thesurvey.api.repository.*;
 import com.thesurvey.api.service.AnsweredQuestionService;
 import com.thesurvey.api.service.AuthenticationService;
 import com.thesurvey.api.service.SurveyService;
@@ -41,7 +30,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -55,12 +43,14 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -181,7 +171,7 @@ public class SurveyControllerTest extends BaseControllerTest {
     @Test
     void testGetSpecificSurvey() throws Exception {
         // given
-        UUID surveyId = UUID.fromString(mockSurvey.getString("surveyId"));
+        Long surveyId = mockSurvey.getLong("surveyId");
 
         // when
         MvcResult result = mockMvc.perform(get("/surveys/" + surveyId))
@@ -224,14 +214,14 @@ public class SurveyControllerTest extends BaseControllerTest {
 
         UserRegisterRequestDto submitAnswerUserRegisterRequestDto = UserRegisterRequestDto.builder()
             .name("submitAnswerUser")
-            .email("submitAnswerUserUser@gmail.com")
+            .email("submitAnswerUser@gmail.com")
             .password("Password40@")
             .phoneNumber("01012345678")
             .build();
         mockRegister(submitAnswerUserRegisterRequestDto, true);
 
         UserLoginRequestDto submitAnswerUserLoginRequestDto = UserLoginRequestDto.builder()
-            .email("submitAnswerUserUser@gmail.com")
+            .email("submitAnswerUser@gmail.com")
             .password("Password40@")
             .build();
         mockLogin(submitAnswerUserLoginRequestDto, true);
@@ -252,7 +242,7 @@ public class SurveyControllerTest extends BaseControllerTest {
             .build();
 
         AnsweredQuestionRequestDto answeredQuestionRequestDto = AnsweredQuestionRequestDto.builder()
-            .surveyId(UUID.fromString(mockSurvey.get("surveyId").toString()))
+            .surveyId(mockSurvey.getLong("surveyId"))
             .answers(List.of(answeredQuestionDto))
             .build();
 
@@ -291,7 +281,7 @@ public class SurveyControllerTest extends BaseControllerTest {
     @Test
     void testUpdateSurvey() throws Exception {
         // given
-        UUID surveyId = UUID.fromString(mockSurvey.getString("surveyId"));
+        Long surveyId = mockSurvey.getLong("surveyId");
         Long userId = UserUtil.getUserIdFromAuthentication(authentication);
         Long authorId = mockSurvey.getLong("authorId");
 
@@ -379,7 +369,7 @@ public class SurveyControllerTest extends BaseControllerTest {
     @Test
     void testDeleteSurvey() throws Exception {
         // given
-        UUID surveyId = UUID.fromString(mockSurvey.getString("surveyId"));
+        Long surveyId = mockSurvey.getLong("surveyId");
         Long authorId = mockSurvey.getLong("authorId");
         Long userId = UserUtil.getUserIdFromAuthentication(authentication);
 

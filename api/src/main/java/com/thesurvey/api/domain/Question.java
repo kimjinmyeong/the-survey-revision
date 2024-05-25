@@ -1,15 +1,16 @@
 package com.thesurvey.api.domain;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
-
-import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import com.thesurvey.api.exception.ErrorMessage;
+import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
+import java.util.Set;
 
 @Entity
 @Table(name = "question")
@@ -19,6 +20,9 @@ public class Question {
 
     @EmbeddedId
     private QuestionId questionId;
+
+    @OneToMany(mappedBy = "question", fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    private Set<AnsweredQuestion> answeredQuestion;
 
     @NotNull
     @Positive
@@ -34,9 +38,9 @@ public class Question {
         this.questionNo = questionNo;
         this.isRequired = isRequired;
         this.questionId = QuestionId.builder()
-            .survey(survey)
-            .questionBank(questionBank)
-            .build();
+                .survey(survey)
+                .questionBank(questionBank)
+                .build();
     }
 
     public void changeQuestionNo(Integer questionNo) {

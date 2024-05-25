@@ -1,10 +1,7 @@
 package com.thesurvey.api.service;
 
-import com.thesurvey.api.domain.AnsweredQuestion;
+import com.thesurvey.api.domain.*;
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
-import com.thesurvey.api.domain.QuestionBank;
-import com.thesurvey.api.domain.Survey;
-import com.thesurvey.api.domain.User;
 import com.thesurvey.api.dto.request.answeredQuestion.AnsweredQuestionDto;
 import com.thesurvey.api.dto.request.answeredQuestion.AnsweredQuestionRequestDto;
 import com.thesurvey.api.dto.response.answeredQuestion.AnsweredQuestionRewardPointDto;
@@ -28,7 +25,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
-import java.util.UUID;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -72,13 +69,13 @@ public class AnsweredQuestionService {
 
     @Transactional
     public AnsweredQuestionRewardPointDto createAnswer(Authentication authentication,
-        AnsweredQuestionRequestDto answeredQuestionRequestDto) {
+                                                       AnsweredQuestionRequestDto answeredQuestionRequestDto) {
         User user = UserUtil.getUserFromAuthentication(authentication);
         Survey survey = surveyRepository.findBySurveyId(answeredQuestionRequestDto.getSurveyId())
-            .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.SURVEY_NOT_FOUND));
+                .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.SURVEY_NOT_FOUND));
 
         List<Integer> surveyCertificationList = surveyRepository.findCertificationTypeBySurveyIdAndAuthorId(
-            survey.getSurveyId(), survey.getAuthorId());
+                survey.getSurveyId(), survey.getAuthorId());
         validateUserCompletedCertification(surveyCertificationList, user.getUserId());
         validateCreateAnswerRequest(user, survey);
 
@@ -93,28 +90,27 @@ public class AnsweredQuestionService {
             }
 
             QuestionBank questionBank = questionBankRepository.findByQuestionBankId(
-                answeredQuestionDto.getQuestionBankId()).orElseThrow(
-                () -> new NotFoundExceptionMapper(ErrorMessage.QUESTION_BANK_NOT_FOUND));
+                    answeredQuestionDto.getQuestionBankId()).orElseThrow(
+                    () -> new NotFoundExceptionMapper(ErrorMessage.QUESTION_BANK_NOT_FOUND));
 
             // check if the question is included in the survey.
-            if (questionRepository.notExistsBySurveyIdAndQuestionBankId(survey.getSurveyId(),
-                questionBank.getQuestionBankId())) {
+            Optional<Question> question = questionRepository.findBySurveyIdAndQuestionBankId(survey.getSurveyId(), questionBank.getQuestionBankId());
+            if (question.isEmpty()) {
                 throw new BadRequestExceptionMapper(ErrorMessage.NOT_SURVEY_QUESTION);
             }
 
             // In case it's not multiple choice question
             if (answeredQuestionDto.getMultipleChoices() == null
-                || answeredQuestionDto.getMultipleChoices().isEmpty()) {
+                    || answeredQuestionDto.getMultipleChoices().isEmpty()) {
                 answeredQuestionRepository.save(
-                    answeredQuestionMapper.toAnsweredQuestion(answeredQuestionDto, user, survey,
-                        questionBank));
+                        answeredQuestionMapper.toAnsweredQuestion(answeredQuestionDto, user, question.get()));
             } else {
                 // In case it's multiple choice question
                 List<AnsweredQuestion> answeredQuestionList = answeredQuestionDto.getMultipleChoices()
-                    .stream()
-                    .map(choice -> answeredQuestionMapper.toAnsweredQuestionWithMultipleChoices(
-                        user, survey, questionBank, choice))
-                    .collect(Collectors.toList());
+                        .stream()
+                        .map(choice -> answeredQuestionMapper.toAnsweredQuestionWithMultipleChoices(
+                                user, question.get(), choice))
+                        .collect(Collectors.toList());
 
                 answeredQuestionRepository.saveAll(answeredQuestionList);
             }
@@ -126,7 +122,7 @@ public class AnsweredQuestionService {
         }
 
         List<CertificationType> certificationTypeList =
-            getCertificationTypeList(surveyCertificationList);
+                getCertificationTypeList(surveyCertificationList);
         participationService.createParticipation(user, certificationTypeList, survey);
         pointHistoryService.savePointHistory(user, rewardPoints);
 
@@ -134,16 +130,16 @@ public class AnsweredQuestionService {
     }
 
     @Transactional
-    public void deleteAnswer(UUID surveyId) {
+    public void deleteAnswer(Long surveyId) {
         List<AnsweredQuestion> answeredQuestionList = answeredQuestionRepository.findAllBySurveyId(
-            surveyId);
+                surveyId);
         answeredQuestionRepository.deleteAll(answeredQuestionList);
     }
 
     private void validateCreateAnswerRequest(User user, Survey survey) {
         // validate if a user has already responded to the survey
         if (answeredQuestionRepository.existsByUserIdAndSurveyId(user.getUserId(),
-            survey.getSurveyId())) {
+                survey.getSurveyId())) {
             throw new ForbiddenRequestExceptionMapper(ErrorMessage.ANSWER_ALREADY_SUBMITTED);
         }
 
@@ -165,23 +161,23 @@ public class AnsweredQuestionService {
 
     private boolean validateEmptyAnswer(AnsweredQuestionDto answeredQuestionDto) {
         return (answeredQuestionDto.getLongAnswer() == null
-            || StringUtil.trimShortLongAnswer(answeredQuestionDto.getLongAnswer(),
-            answeredQuestionDto.getIsRequired()).isEmpty())
-            && (answeredQuestionDto.getShortAnswer() == null
-            || StringUtil.trimShortLongAnswer(answeredQuestionDto.getShortAnswer(),
-            answeredQuestionDto.getIsRequired()).isEmpty())
-            && answeredQuestionDto.getSingleChoice() == null
-            && (answeredQuestionDto.getMultipleChoices() == null || answeredQuestionDto.getMultipleChoices().isEmpty());
+                || StringUtil.trimShortLongAnswer(answeredQuestionDto.getLongAnswer(),
+                answeredQuestionDto.getIsRequired()).isEmpty())
+                && (answeredQuestionDto.getShortAnswer() == null
+                || StringUtil.trimShortLongAnswer(answeredQuestionDto.getShortAnswer(),
+                answeredQuestionDto.getIsRequired()).isEmpty())
+                && answeredQuestionDto.getSingleChoice() == null
+                && (answeredQuestionDto.getMultipleChoices() == null || answeredQuestionDto.getMultipleChoices().isEmpty());
     }
 
     // validate if the user has completed the necessary certifications for the survey
     public void validateUserCompletedCertification(List<Integer> surveyCertificationList,
-        Long userId) {
+                                                   Long userId) {
         if (surveyCertificationList.contains(CertificationType.NONE.getCertificationTypeId())) {
             return;
         }
         List<Integer> userCertificationList = userCertificationRepository.findUserCertificationTypeByUserId(
-            userId);
+                userId);
         if (!new HashSet<>(userCertificationList).containsAll(surveyCertificationList)) {
             throw new UnauthorizedRequestExceptionMapper(ErrorMessage.CERTIFICATION_NOT_COMPLETED);
         }

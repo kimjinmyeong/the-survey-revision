@@ -2,7 +2,6 @@ package com.thesurvey.api.service.mapper;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
 import com.thesurvey.api.domain.Survey;
@@ -106,7 +105,7 @@ public class SurveyMapper {
             .build();
     }
 
-    private List<CertificationType> getConvertedCertificationTypes(UUID surveyId, Long authorId) {
+    private List<CertificationType> getConvertedCertificationTypes(Long surveyId, Long authorId) {
         List<Integer> certificationTypes =
             surveyRepository.findCertificationTypeBySurveyIdAndAuthorId(surveyId, authorId);
         if (certificationTypes.contains(CertificationType.NONE.getCertificationTypeId())) {

@@ -1,7 +1,6 @@
 package com.thesurvey.api.dto.request.answeredQuestion;
 
 import java.util.List;
-import java.util.UUID;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
@@ -20,7 +19,7 @@ public class AnsweredQuestionRequestDto {
     List<@Valid AnsweredQuestionDto> answers;
 
     @NotNull
-    @Schema(example = "93c0a231-207e-4190-aee9-0a5f78cafc44", description = "수정하려는 설문조사의 아이디입니다.")
-    private UUID surveyId;
+    @Schema(example = "1", description = "수정하려는 설문조사의 아이디입니다.")
+    private Long surveyId;
 
 }

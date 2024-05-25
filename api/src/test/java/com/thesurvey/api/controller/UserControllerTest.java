@@ -3,7 +3,6 @@ package com.thesurvey.api.controller;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.UUID;
 
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
 import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
@@ -205,14 +204,14 @@ public class UserControllerTest extends BaseControllerTest {
 
         UserRegisterRequestDto submitAnswerUserRegisterRequestDto = UserRegisterRequestDto.builder()
             .name("submitAnswerUser")
-            .email("submitAnswerUserUser@gmail.com")
+            .email("submitAnswerUser@gmail.com")
             .password("Password40@")
             .phoneNumber("01012345678")
             .build();
         mockRegister(submitAnswerUserRegisterRequestDto, true);
 
         UserLoginRequestDto submitAnswerUserLoginRequestDto = UserLoginRequestDto.builder()
-            .email("submitAnswerUserUser@gmail.com")
+            .email("submitAnswerUser@gmail.com")
             .password("Password40@")
             .build();
         mockLogin(submitAnswerUserLoginRequestDto, true);
@@ -229,7 +228,7 @@ public class UserControllerTest extends BaseControllerTest {
             .build();
 
         AnsweredQuestionRequestDto answeredQuestionRequestDto = AnsweredQuestionRequestDto.builder()
-            .surveyId(UUID.fromString(createdSurveyContent.get("surveyId").toString()))
+            .surveyId(createdSurveyContent.getLong("surveyId"))
             .answers(List.of(answeredQuestionDto))
             .build();
 

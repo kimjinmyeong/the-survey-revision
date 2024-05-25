@@ -4,7 +4,6 @@ import com.thesurvey.api.dto.request.question.QuestionBankUpdateRequestDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Future;
@@ -22,8 +21,8 @@ import lombok.Getter;
 public class SurveyUpdateRequestDto {
 
     @NotNull
-    @Schema(example = "93c0a231-207e-4190-aee9-0a5f78cafc44", description = "수정하려는 설문조사 아이디입니다.")
-    private UUID surveyId;
+    @Schema(example = "1", description = "수정하려는 설문조사 아이디입니다.")
+    private Long surveyId;
 
     @Size(max = 100)
     @Schema(example = "수정된 설문조사 제목", description = "수정하려는 설문조사 제목입니다. 설문조사 제목은 100자 이내여야 합니다.")

@@ -2,7 +2,6 @@ package com.thesurvey.api.domain;
 
 import java.io.Serializable;
 import java.util.Objects;
-import java.util.UUID;
 
 import javax.persistence.*;
 
@@ -25,7 +24,7 @@ public class ParticipationId implements Serializable {
     private CertificationType certificationType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "survey_id", columnDefinition = "uuid")
+    @JoinColumn(name = "survey_id")
     public Survey survey;
 
     @ManyToOne(fetch = FetchType.LAZY)

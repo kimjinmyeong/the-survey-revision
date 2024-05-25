@@ -1,30 +1,17 @@
 package com.thesurvey.api.domain;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.validation.constraints.Future;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.Size;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import com.thesurvey.api.exception.ErrorMessage;
+import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import javax.persistence.*;
+import javax.validation.constraints.*;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "survey")
@@ -34,8 +21,8 @@ public class Survey extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "survey_id", columnDefinition = "uuid")
-    private UUID surveyId;
+    @Column(name = "survey_id")
+    private Long surveyId;
 
     @OneToMany(
         mappedBy = "participationId.survey",

@@ -2,7 +2,6 @@ package com.thesurvey.api.dto.response.survey;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
@@ -15,8 +14,8 @@ import lombok.Getter;
 @Builder
 public class SurveyResponseDto {
 
-    @Schema(example = "93c0a231-207e-4190-aee9-0a5f78cafc44", description = "생성된 설문조사의 아이디입니다.")
-    private UUID surveyId;
+    @Schema(example = "1", description = "생성된 설문조사의 아이디입니다.")
+    private Long surveyId;
 
     @Schema(example = "1", description = "설문조사 생성자의 아이디입니다.")
     private Long authorId;

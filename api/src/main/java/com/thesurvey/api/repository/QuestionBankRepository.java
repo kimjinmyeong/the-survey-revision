@@ -2,7 +2,6 @@ package com.thesurvey.api.repository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import com.thesurvey.api.domain.QuestionBank;
 
@@ -16,9 +15,9 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, Long
     Optional<QuestionBank> findByQuestionBankId(Long questionBankId);
 
     @Query("SELECT qb FROM QuestionBank qb JOIN FETCH qb.questions q JOIN q.questionId.survey s WHERE s.surveyId= :surveyId ORDER BY q.questionNo ASC")
-    List<QuestionBank> findAllBySurveyId(UUID surveyId);
+    List<QuestionBank> findAllBySurveyId(Long surveyId);
 
     @Query("SELECT qb FROM QuestionBank qb JOIN FETCH qb.questions q JOIN q.questionId.survey s WHERE s.surveyId = :surveyId AND qb.title = :title")
-    Optional<QuestionBank> findBySurveyIdAndTitle(UUID surveyId, String title);
+    Optional<QuestionBank> findBySurveyIdAndTitle(Long surveyId, String title);
 
 }
