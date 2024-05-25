@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +30,7 @@ public class ParticipationService {
     }
 
     @Transactional
-    public void deleteParticipation(UUID surveyId) {
+    public void deleteParticipation(Long surveyId) {
         List<Participation> participationList = participationRepository.findAllBySurveyId(surveyId);
         participationRepository.deleteAll(participationList);
     }

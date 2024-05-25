@@ -38,7 +38,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -87,7 +86,7 @@ public class SurveyService {
 
     @Transactional(readOnly = true)
     public SurveyResponseDto getSurveyBySurveyIdWithRelatedQuestion(Authentication authentication
-        , UUID surveyId) {
+        , Long surveyId) {
         Survey survey = getSurveyFromSurveyId(surveyId);
 
         List<Integer> surveyCertificationList =
@@ -122,7 +121,7 @@ public class SurveyService {
      */
     @Transactional(readOnly = true)
     public UserSurveyResultDto getUserCreatedSurveyResult(Authentication authentication,
-        UUID surveyId) {
+        Long surveyId) {
         Survey survey = getSurveyFromSurveyId(surveyId);
 
         // validate survey author from current user
@@ -174,7 +173,7 @@ public class SurveyService {
     }
 
     @Transactional
-    public void deleteSurvey(Authentication authentication, UUID surveyId) {
+    public void deleteSurvey(Authentication authentication, Long surveyId) {
         User user = UserUtil.getUserFromAuthentication(authentication);
         Survey survey = getSurveyFromSurveyId(surveyId);
 
@@ -255,7 +254,7 @@ public class SurveyService {
         }
     }
 
-    private Survey getSurveyFromSurveyId(UUID surveyId) {
+    private Survey getSurveyFromSurveyId(Long surveyId) {
         return surveyRepository.findBySurveyId(surveyId)
             .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.SURVEY_NOT_FOUND));
     }

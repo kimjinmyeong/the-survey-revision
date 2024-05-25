@@ -3,7 +3,6 @@ package com.thesurvey.api.service;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.UUID;
 
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
 import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
@@ -86,13 +85,13 @@ public class SurveyServiceTest {
             .title("This is test survey.")
             .authorId(1L)
             .description("This is test description.")
-            .startedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
+            .startedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")).minusSeconds(5))
             .endedDate(LocalDateTime.now(
-                ZoneId.of("Asia/Seoul"))) // set to before the startedDate of surveyUpdateRequestDto
+                ZoneId.of("Asia/Seoul")).minusSeconds(1)) // set to before the startedDate of surveyUpdateRequestDto
             .build();
 
         SurveyUpdateRequestDto surveyUpdateRequestDto = SurveyUpdateRequestDto.builder()
-            .surveyId(UUID.randomUUID())
+            .surveyId(1L)
             .title("This is update test survey.")
             .description("This is update test description")
             .startedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
@@ -191,7 +190,7 @@ public class SurveyServiceTest {
             .build();
 
         SurveyUpdateRequestDto surveyUpdateRequestDto = SurveyUpdateRequestDto.builder()
-            .surveyId(UUID.randomUUID())
+            .surveyId(1L)
             .title("This is update test survey.")
             .description("This is update test description")
             .startedDate(
@@ -232,13 +231,13 @@ public class SurveyServiceTest {
             .description("This is test description.")
             .startedDate(LocalDateTime.now(ZoneId.of(
                     "Asia/Seoul"))
-                .minusSeconds(5)) // set to the current time to create a survey that already started
+                .minusSeconds(100)) // set to the current time to create a survey that already started
             .endedDate(LocalDateTime.now(
                 ZoneId.of("Asia/Seoul")).plusDays(100))
             .build();
 
         SurveyUpdateRequestDto surveyUpdateRequestDto = SurveyUpdateRequestDto.builder()
-            .surveyId(UUID.randomUUID())
+            .surveyId(1L)
             .title("This is update test survey.")
             .description("This is update test description")
             .startedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusDays(10))

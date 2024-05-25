@@ -1,30 +1,25 @@
 package com.thesurvey.api.repository;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import com.thesurvey.api.domain.Question;
 import com.thesurvey.api.domain.QuestionId;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, QuestionId> {
 
+    @Query("SELECT q FROM Question q WHERE q.questionId.survey.surveyId = :surveyId AND q.questionId.questionBank.questionBankId = :questionBankId" )
+    Optional<Question> findBySurveyIdAndQuestionBankId(Long surveyId, Long questionBankId);
+
     @Query("SELECT q FROM Question q WHERE q.questionId.survey.surveyId = :surveyId ORDER BY q.questionNo ASC")
-    List<Question> findAllBySurveyId(UUID surveyId);
+    List<Question> findAllBySurveyId(Long surveyId);
 
     @Query("SELECT q.questionNo FROM Question q WHERE q.questionId.questionBank.questionBankId = :questionBankId")
     Optional<Integer> findQuestionNoByQuestionBankId(Long questionBankId);
-
-    @Query("SELECT CASE WHEN COUNT(q) < 0 THEN true ELSE false END FROM Question q WHERE q.questionId.survey.surveyId = :surveyId AND q.questionId.questionBank.questionBankId = :questionBankId")
-    boolean notExistsBySurveyIdAndQuestionBankId(UUID surveyId, Long questionBankId);
-
-    @Query("SELECT q FROM Question q WHERE q.questionId.questionBank.questionBankId = :questionBankId")
-    Optional<Question> findByQuestionBankId(Long questionBankId);
 
     @Query("SELECT q.isRequired FROM Question q WHERE q.questionId.questionBank.questionBankId = :questionBankId")
     Optional<Boolean> findIsRequiredByQuestionBankId(Long questionBankId);

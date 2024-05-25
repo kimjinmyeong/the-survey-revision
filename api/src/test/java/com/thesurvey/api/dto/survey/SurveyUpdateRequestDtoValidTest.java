@@ -1,23 +1,20 @@
 package com.thesurvey.api.dto.survey;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.UUID;
-
-import javax.validation.ConstraintViolation;
-import javax.validation.Validator;
-
 import com.thesurvey.api.controller.SurveyController;
 import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
 import com.thesurvey.api.dto.request.question.QuestionBankUpdateRequestDto;
 import com.thesurvey.api.dto.request.survey.SurveyUpdateRequestDto;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
+
+import javax.validation.ConstraintViolation;
+import javax.validation.Validator;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -25,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @MockBean(JpaMetamodelMappingContext.class)
 public class SurveyUpdateRequestDtoValidTest {
 
-    final UUID surveyId = UUID.fromString("5eaa47c1-cba3-45da-9533-3528e18563c3");
+    final Long surveyId = 1L;
 
     @Autowired
     private Validator validator;

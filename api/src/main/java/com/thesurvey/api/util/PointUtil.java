@@ -1,25 +1,16 @@
 package com.thesurvey.api.util;
 
-import java.util.List;
-import java.util.UUID;
-
 import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
 import com.thesurvey.api.domain.QuestionBank;
 import com.thesurvey.api.exception.ErrorMessage;
 import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import com.thesurvey.api.repository.QuestionBankRepository;
 import com.thesurvey.api.service.PointHistoryService;
-
 import org.springframework.stereotype.Component;
 
-import static com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType.LONG_ANSWER_CONSUME;
-import static com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType.LONG_ANSWER_REWARD;
-import static com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType.MULTIPLE_CHOICES_CONSUME;
-import static com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType.MULTIPLE_CHOICES_REWARD;
-import static com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType.SHORT_ANSWER_CONSUME;
-import static com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType.SHORT_ANSWER_REWARD;
-import static com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType.SINGLE_CHOICE_CONSUME;
-import static com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType.SINGLE_CHOICE_REWARD;
+import java.util.List;
+
+import static com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType.*;
 
 @Component
 public class PointUtil {
@@ -33,7 +24,7 @@ public class PointUtil {
         this.pointHistoryService = pointHistoryService;
     }
 
-    public int calculateSurveyCreatePoints(UUID surveyId) {
+    public int calculateSurveyCreatePoints(Long surveyId) {
         List<QuestionBank> questionBankList = questionBankRepository.findAllBySurveyId(surveyId);
         int createPoints = 0;
         for (QuestionBank questionBank : questionBankList) {
@@ -84,7 +75,7 @@ public class PointUtil {
      * {@code maxRewardPoints} is the amount of points a user get when they answer all the
      * questions in the survey.
      */
-    public int getSurveyMaxRewardPoints(UUID surveyId) {
+    public int getSurveyMaxRewardPoints(Long surveyId) {
         List<QuestionBank> questionBankList = questionBankRepository.findAllBySurveyId(surveyId);
         int maxRewardPoints = questionBankList.stream()
             .mapToInt(questionBank -> calculateSurveyMaxRewardPoints(questionBank.getQuestionType()))

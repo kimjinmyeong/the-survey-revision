@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
-import java.util.UUID;
 
 @Tag(name = "사용자", description = "User Controller")
 @RestController
@@ -82,7 +81,7 @@ public class UserController {
     @GetMapping("/surveys/{surveyId}")
     public ResponseEntity<UserSurveyResultDto> getUserCreatedSurveyResult(
             @Parameter(hidden = true) Authentication authentication,
-            @PathVariable("surveyId") UUID surveyId) {
+            @PathVariable("surveyId") Long surveyId) {
         return ResponseEntity.ok(
                 surveyService.getUserCreatedSurveyResult(authentication, surveyId));
     }

@@ -3,7 +3,6 @@ package com.thesurvey.api.dto.answeredQuestion;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
@@ -40,7 +39,7 @@ public class AnsweredQuestionRequestDtoValidTest {
 
         List<AnsweredQuestionDto> answers = Arrays.asList(answeredQuestionDto);
         AnsweredQuestionRequestDto answeredQuestionRequestDto = AnsweredQuestionRequestDto.builder()
-            .surveyId(UUID.randomUUID())
+            .surveyId(1L)
             .answers(answers)
             .build();
 
