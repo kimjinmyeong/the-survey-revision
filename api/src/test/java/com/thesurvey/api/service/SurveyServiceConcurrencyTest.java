@@ -143,7 +143,8 @@ public class SurveyServiceConcurrencyTest extends BaseControllerTest {
         }
         latch.await();
         long surveys = surveyRepository.count();
-        assertThat(surveys).isEqualTo(threadCount);
+        assertThat(surveys).isEqualTo(threadCount - 1);
+
         List<Integer> pointHistory = pointHistoryRepository.findPointByUserId(user.getUserId());
         assertThat(pointHistory.get(0)).isEqualTo(30); // Initial Point 50 - (SINGLE_CHOICE 2 * 10)
 

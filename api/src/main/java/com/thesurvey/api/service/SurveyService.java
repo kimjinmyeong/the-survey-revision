@@ -20,6 +20,7 @@ import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import com.thesurvey.api.exception.mapper.ForbiddenRequestExceptionMapper;
 import com.thesurvey.api.exception.mapper.NotFoundExceptionMapper;
 import com.thesurvey.api.repository.AnsweredQuestionRepository;
+import com.thesurvey.api.repository.QuestionBankRepository;
 import com.thesurvey.api.repository.SurveyRepository;
 import com.thesurvey.api.service.mapper.QuestionBankMapper;
 import com.thesurvey.api.service.mapper.QuestionOptionMapper;
@@ -65,6 +66,8 @@ public class SurveyService {
     private final PointUtil pointUtil;
 
     private final AnsweredQuestionRepository answeredQuestionRepository;
+
+    private final QuestionBankRepository questionBankRepository;
 
     @Transactional(readOnly = true)
     public SurveyListPageDto getAllSurvey(int page) {
@@ -160,13 +163,14 @@ public class SurveyService {
             surveyRequestDto.getCertificationTypes().isEmpty()
                 ? List.of(CertificationType.NONE) : surveyRequestDto.getCertificationTypes();
 
-        Survey survey = surveyRepository.save(surveyMapper.toSurvey(surveyRequestDto,
-            user.getUserId()));
-        questionService.createQuestion(surveyRequestDto.getQuestions(), survey);
-
-        int surveyCreatePoints = pointUtil.calculateSurveyCreatePoints(survey.getSurveyId());
+        int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
+                .mapToInt(questionRequestDto -> pointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
+                .sum();
         pointUtil.validateUserPoint(surveyCreatePoints, user.getUserId());
 
+        Survey survey = surveyRepository.save(surveyMapper.toSurvey(surveyRequestDto,
+                user.getUserId()));
+        questionService.createQuestion(surveyRequestDto.getQuestions(), survey);
         participationService.createParticipation(user, certificationTypes, survey);
         pointHistoryService.savePointHistory(user, -surveyCreatePoints);
         return surveyMapper.toSurveyResponseDto(survey, user.getUserId());
@@ -186,7 +190,11 @@ public class SurveyService {
             throw new BadRequestExceptionMapper(ErrorMessage.SURVEY_ALREADY_STARTED);
         }
 
-        int surveyCreatePoints = pointUtil.calculateSurveyCreatePoints(survey.getSurveyId());
+        List<QuestionBank> questionBankList = questionBankRepository.findAllBySurveyId(surveyId);
+        int surveyCreatePoints = questionBankList.stream()
+                .mapToInt(questionBank -> pointUtil.calculateSurveyCreatePoints(questionBank.getQuestionType()))
+                .sum();
+
         pointHistoryService.savePointHistory(user, surveyCreatePoints);
         participationService.deleteParticipation(surveyId);
         answeredQuestionService.deleteAnswer(surveyId);
