@@ -28,7 +28,7 @@ public class PointHistory {
     @Column(name = "point")
     private Integer point;
 
-    public static final int USER_INITIAL_POINT = 18;
+    public static final int USER_INITIAL_POINT = 50;
 
     @Builder
     public PointHistory(User user, LocalDateTime transactionDate, Integer point) {

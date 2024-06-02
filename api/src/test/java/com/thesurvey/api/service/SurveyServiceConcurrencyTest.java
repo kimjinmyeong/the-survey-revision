@@ -11,15 +11,15 @@ import com.thesurvey.api.dto.request.user.UserRegisterRequestDto;
 import com.thesurvey.api.repository.PointHistoryRepository;
 import com.thesurvey.api.repository.SurveyRepository;
 import com.thesurvey.api.repository.UserRepository;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.transaction.AfterTransaction;
+import org.springframework.test.context.transaction.BeforeTransaction;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
@@ -36,7 +36,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Transactional
 public class SurveyServiceConcurrencyTest extends BaseControllerTest {
 
     @Autowired
@@ -74,28 +73,7 @@ public class SurveyServiceConcurrencyTest extends BaseControllerTest {
     CountDownLatch latch;
 
     @BeforeAll
-    void setupBeforeEach() throws Exception {
-        UserRegisterRequestDto userRegisterRequestDto = UserRegisterRequestDto.builder()
-                .name("test1")
-                .email("test1@gmail.com")
-                .password("Password40@")
-                .phoneNumber("01012345678")
-                .build();
-        mockRegister(userRegisterRequestDto, true);
-
-        UserLoginRequestDto userLoginRequestDto = UserLoginRequestDto.builder()
-                .email("test1@gmail.com")
-                .password("Password40@")
-                .build();
-        mockLogin(userLoginRequestDto, true);
-
-        authentication = authenticationService.authenticate(
-                new UsernamePasswordAuthenticationToken(userLoginRequestDto.getEmail(),
-                        userLoginRequestDto.getPassword())
-        );
-
-        user = userRepository.findByEmail(userLoginRequestDto.getEmail()).get();
-
+    void setUpBeforeAll() {
         questionOptionRequestDto = QuestionOptionRequestDto.builder()
                 .option("This is test option")
                 .description("This is test option description")
@@ -121,9 +99,40 @@ public class SurveyServiceConcurrencyTest extends BaseControllerTest {
                 .questions(List.of(questionRequestDto))
                 .build();
     }
+    @BeforeTransaction
+    void setupBeforeEach() throws Exception {
+        UserRegisterRequestDto userRegisterRequestDto = UserRegisterRequestDto.builder()
+                .name("test1")
+                .email("test1@gmail.com")
+                .password("Password40@")
+                .phoneNumber("01012345678")
+                .build();
+        mockRegister(userRegisterRequestDto, true);
+
+        UserLoginRequestDto userLoginRequestDto = UserLoginRequestDto.builder()
+                .email("test1@gmail.com")
+                .password("Password40@")
+                .build();
+        mockLogin(userLoginRequestDto, true);
+
+        authentication = authenticationService.authenticate(
+                new UsernamePasswordAuthenticationToken(userLoginRequestDto.getEmail(),
+                        userLoginRequestDto.getPassword())
+        );
+
+        user = userRepository.findByEmail(userLoginRequestDto.getEmail()).get();
+    }
+
+    @AfterTransaction
+    void tearDownAfterEach() {
+        userRepository.deleteAll();
+        surveyRepository.deleteAll();
+    }
 
     @Test
+    @Transactional
     public void testConcurrentSurveyCreation() throws Exception {
+        // given
         int threadCount = 10;
         executorService = Executors.newFixedThreadPool(threadCount);
         latch = new CountDownLatch(threadCount);
@@ -138,15 +147,49 @@ public class SurveyServiceConcurrencyTest extends BaseControllerTest {
             }
         };
 
+        // when
         for (int i = 0; i < threadCount; i++) {
             executorService.execute(task);
         }
         latch.await();
+
+        // then
         long surveys = surveyRepository.count();
-        assertThat(surveys).isEqualTo(threadCount - 1);
+        assertThat(surveys).isEqualTo(threadCount);
 
         List<Integer> pointHistory = pointHistoryRepository.findPointByUserId(user.getUserId());
         assertThat(pointHistory.get(0)).isEqualTo(30); // Initial Point 50 - (SINGLE_CHOICE 2 * 10)
 
+    }
+
+    @Test
+    @Transactional
+    public void testValidateSurveyCreation() throws Exception {
+        // given
+        int threadCount = 30;
+        executorService = Executors.newFixedThreadPool(threadCount);
+        latch = new CountDownLatch(threadCount);
+        Runnable task = () -> {
+            try {
+                surveyService.createSurvey(authentication, surveyRequestDto);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                latch.countDown();
+            }
+        };
+
+        // when
+        for (int i = 0; i < threadCount; i++) {
+            executorService.execute(task);
+        }
+        latch.await();
+
+        // then
+        long surveys = surveyRepository.count();
+        assertThat(surveys).isEqualTo(threadCount - 5); // Initial Point 50 % need point 2 = 25
+
+        List<Integer> pointHistory = pointHistoryRepository.findPointByUserId(user.getUserId());
+        assertThat(pointHistory.get(0)).isEqualTo(0); // Initial Point 50 - (SINGLE_CHOICE 2 * 30) = 0
     }
 }

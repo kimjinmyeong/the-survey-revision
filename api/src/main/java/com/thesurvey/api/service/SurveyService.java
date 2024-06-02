@@ -166,13 +166,15 @@ public class SurveyService {
         int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
                 .mapToInt(questionRequestDto -> pointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
                 .sum();
-        pointUtil.validateUserPoint(surveyCreatePoints, user.getUserId());
+//        pointUtil.validateUserPoint(surveyCreatePoints, user.getUserId());
+        int userTotalPoint = pointHistoryService.getUserTotalPoint(user.getUserId());
+        System.out.println("# 1 : " + userTotalPoint);
+        pointHistoryService.savePointHistory(user, -surveyCreatePoints);
 
         Survey survey = surveyRepository.save(surveyMapper.toSurvey(surveyRequestDto,
                 user.getUserId()));
         questionService.createQuestion(surveyRequestDto.getQuestions(), survey);
         participationService.createParticipation(user, certificationTypes, survey);
-        pointHistoryService.savePointHistory(user, -surveyCreatePoints);
         return surveyMapper.toSurveyResponseDto(survey, user.getUserId());
     }
 
