@@ -60,9 +60,8 @@ public class SurveyController {
         @ApiResponse(responseCode = "404", description = "요청한 리소스 찾을 수 없음", content = @Content(schema = @Schema(hidden = true)))
     })
     @GetMapping("/{surveyId}")
-    public ResponseEntity<SurveyResponseDto> getSurvey(
-        @Parameter(hidden = true) Authentication authentication, @PathVariable Long surveyId) {
-        return ResponseEntity.ok(surveyService.getSurveyBySurveyIdWithRelatedQuestion(authentication, surveyId));
+    public ResponseEntity<SurveyResponseDto> getSurvey(@PathVariable Long surveyId) {
+        return ResponseEntity.ok(surveyService.getSurveyBySurveyIdWithRelatedQuestion(surveyId));
     }
 
     @Operation(summary = "설문조사 생성", description = "새로운 설문조사를 생성합니다.")
@@ -75,10 +74,8 @@ public class SurveyController {
         @ApiResponse(responseCode = "500", description = "서버 내부 오류", content = @Content(schema = @Schema(hidden = true)))
     })
     @PostMapping
-    public ResponseEntity<SurveyResponseDto> createSurvey(
-        @Parameter(hidden = true) Authentication authentication,
-        @Valid @RequestBody SurveyRequestDto surveyRequestDto) {
-        return ResponseEntity.ok(surveyService.createSurvey(authentication, surveyRequestDto));
+    public ResponseEntity<SurveyResponseDto> createSurvey(@Valid @RequestBody SurveyRequestDto surveyRequestDto) {
+        return ResponseEntity.ok(surveyService.createSurvey(surveyRequestDto));
     }
 
     @Operation(summary = "설문조사 수정", description = "설문조사 내용을 수정합니다.")
@@ -92,10 +89,9 @@ public class SurveyController {
     })
     @PatchMapping
     public ResponseEntity<SurveyResponseDto> updateSurvey(
-        @Parameter(hidden = true) Authentication authentication,
         @Valid @RequestBody SurveyUpdateRequestDto surveyUpdateRequestDto) {
         return ResponseEntity.ok(
-            surveyService.updateSurvey(authentication, surveyUpdateRequestDto));
+            surveyService.updateSurvey(surveyUpdateRequestDto));
     }
 
     @Operation(summary = "설문조사 삭제", description = "파라미터로 전달 받은 UUID에 해당하는 설문조사를 삭제합니다.")
@@ -124,10 +120,9 @@ public class SurveyController {
     })
     @PostMapping("/submit")
     public ResponseEntity<AnsweredQuestionRewardPointDto> submitSurvey(
-        @Parameter(hidden = true) Authentication authentication,
-        @Valid @RequestBody AnsweredQuestionRequestDto answeredQuestionRequestDto) {
+            @Valid @RequestBody AnsweredQuestionRequestDto answeredQuestionRequestDto) {
         AnsweredQuestionRewardPointDto rewardPointDto =
-            answeredQuestionService.createAnswer(authentication, answeredQuestionRequestDto);
+            answeredQuestionService.createAnswer(answeredQuestionRequestDto);
         return ResponseEntity.ok(rewardPointDto);
     }
 

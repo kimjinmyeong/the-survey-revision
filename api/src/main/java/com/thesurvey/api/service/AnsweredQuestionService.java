@@ -18,6 +18,7 @@ import com.thesurvey.api.util.StringUtil;
 import com.thesurvey.api.util.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,8 +69,8 @@ public class AnsweredQuestionService {
     }
 
     @Transactional
-    public AnsweredQuestionRewardPointDto createAnswer(Authentication authentication,
-                                                       AnsweredQuestionRequestDto answeredQuestionRequestDto) {
+    public AnsweredQuestionRewardPointDto createAnswer(AnsweredQuestionRequestDto answeredQuestionRequestDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = UserUtil.getUserFromAuthentication(authentication);
         Survey survey = surveyRepository.findBySurveyId(answeredQuestionRequestDto.getSurveyId())
                 .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.SURVEY_NOT_FOUND));

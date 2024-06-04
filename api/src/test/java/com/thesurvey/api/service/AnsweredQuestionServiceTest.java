@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
@@ -89,6 +90,7 @@ public class AnsweredQuestionServiceTest {
         submitUserAuthentication = authenticationService.authenticate(
             new UsernamePasswordAuthenticationToken(submitUserRegisterRequestDto.getEmail(),
                 submitUserRegisterRequestDto.getPassword()));
+
     }
 
     @Test
@@ -116,8 +118,8 @@ public class AnsweredQuestionServiceTest {
             .questions(testQuestionList)
             .build();
 
-        SurveyResponseDto testSurveyResponseDto = surveyService.createSurvey(testAuthentication,
-            testSurveyRequestDto);
+        SecurityContextHolder.getContext().setAuthentication(testAuthentication);
+        SurveyResponseDto testSurveyResponseDto = surveyService.createSurvey(testSurveyRequestDto);
         List<QuestionBankResponseDto> testQuestionResponseList = testSurveyResponseDto.getQuestions();
 
         AnsweredQuestionDto answeredQuestionDto = AnsweredQuestionDto.builder()
@@ -133,8 +135,7 @@ public class AnsweredQuestionServiceTest {
             .build();
 
         assertThrows(UnauthorizedRequestExceptionMapper.class,
-            () -> answeredQuestionService.createAnswer(submitUserAuthentication,
-                answeredQuestionRequestDto));
+            () -> answeredQuestionService.createAnswer(answeredQuestionRequestDto));
     }
 
     @Test
@@ -187,9 +188,8 @@ public class AnsweredQuestionServiceTest {
             .certificationTypes(List.of(CertificationType.NONE))
             .questions(testQuestionList)
             .build();
-
-        SurveyResponseDto testSurveyResponseDto = surveyService.createSurvey(testAuthentication,
-            testSurveyRequestDto);
+        SecurityContextHolder.getContext().setAuthentication(testAuthentication);
+        SurveyResponseDto testSurveyResponseDto = surveyService.createSurvey(testSurveyRequestDto);
         List<QuestionBankResponseDto> testQuestionResponseList = testSurveyResponseDto.getQuestions();
 
         AnsweredQuestionDto longAnsweredQuestionDto = AnsweredQuestionDto.builder()
@@ -226,9 +226,10 @@ public class AnsweredQuestionServiceTest {
                 singleChoiceAnsweredQuestion, multipleChoicesAnsweredQuestion))
             .build();
 
+
+        SecurityContextHolder.getContext().setAuthentication(submitUserAuthentication);
         assertThrows(BadRequestExceptionMapper.class,
-            () -> answeredQuestionService.createAnswer(submitUserAuthentication,
-                answeredQuestionRequestDto));
+            () -> answeredQuestionService.createAnswer(answeredQuestionRequestDto));
     }
 
 }

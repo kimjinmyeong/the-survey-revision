@@ -31,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,10 +86,9 @@ public class SurveyService {
     }
 
     @Transactional(readOnly = true)
-    public SurveyResponseDto getSurveyBySurveyIdWithRelatedQuestion(Authentication authentication
-        , Long surveyId) {
+    public SurveyResponseDto getSurveyBySurveyIdWithRelatedQuestion(Long surveyId) {
         Survey survey = getSurveyFromSurveyId(surveyId);
-
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         List<Integer> surveyCertificationList =
             surveyRepository.findCertificationTypeBySurveyIdAndAuthorId(surveyId, survey.getAuthorId());
         Long userId = UserUtil.getUserIdFromAuthentication(authentication);
@@ -115,16 +115,16 @@ public class SurveyService {
     /**
      * Returns survey results and the answers created by the user.
      *
-     * @param authentication authentication of the requesting user
      * @param surveyId the ID of survey to get result
      * @return {@link UserSurveyResultDto}
      */
     @Transactional(readOnly = true)
-    public UserSurveyResultDto getUserCreatedSurveyResult(Authentication authentication,
-        Long surveyId) {
+    public UserSurveyResultDto getUserCreatedSurveyResult(Long surveyId) {
         Survey survey = getSurveyFromSurveyId(surveyId);
 
         // validate survey author from current user
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         validateSurveyAuthor(UserUtil.getUserIdFromAuthentication(authentication),
             survey.getAuthorId());
 
@@ -141,8 +141,7 @@ public class SurveyService {
     }
 
     @Transactional
-    public SurveyResponseDto createSurvey(Authentication authentication,
-        SurveyRequestDto surveyRequestDto) {
+    public SurveyResponseDto createSurvey(SurveyRequestDto surveyRequestDto) {
 
         // `startedDate` is only allowed to be within 5 seconds from now or later.
         if (surveyRequestDto.getStartedDate()
@@ -154,6 +153,8 @@ public class SurveyService {
         if (surveyRequestDto.getStartedDate().isAfter(surveyRequestDto.getEndedDate())) {
             throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISAFTER_ENDEDDATE);
         }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = UserUtil.getUserFromAuthentication(authentication);
 
         List<CertificationType> certificationTypes =
@@ -196,8 +197,8 @@ public class SurveyService {
     }
 
     @Transactional
-    public SurveyResponseDto updateSurvey(Authentication authentication,
-        SurveyUpdateRequestDto surveyUpdateRequestDto) {
+    public SurveyResponseDto updateSurvey(SurveyUpdateRequestDto surveyUpdateRequestDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = UserUtil.getUserIdFromAuthentication(authentication);
         Survey survey = getSurveyFromSurveyId(surveyUpdateRequestDto.getSurveyId());
 
