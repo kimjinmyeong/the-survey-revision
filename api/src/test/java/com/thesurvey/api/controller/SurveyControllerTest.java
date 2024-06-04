@@ -37,6 +37,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -163,9 +164,11 @@ public class SurveyControllerTest extends BaseControllerTest {
             new UsernamePasswordAuthenticationToken(userLoginRequestDto.getEmail(),
                 userLoginRequestDto.getPassword())
         );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         MvcResult createdSurvey = mockCreateSurvey(surveyRequestDto);
         mockSurvey = new JSONObject(createdSurvey.getResponse().getContentAsString());
+
     }
 
     @Test

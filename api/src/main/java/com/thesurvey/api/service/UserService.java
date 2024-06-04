@@ -12,6 +12,7 @@ import com.thesurvey.api.util.UserUtil;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,8 +37,8 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponseDto updateUserProfile(Authentication authentication,
-        UserUpdateRequestDto userUpdateRequestDto) {
+    public UserResponseDto updateUserProfile(UserUpdateRequestDto userUpdateRequestDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = UserUtil.getUserFromAuthentication(authentication);
 
         if (userUpdateRequestDto.getPassword() != null) {
