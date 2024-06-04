@@ -79,11 +79,9 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "요청한 리소스 찾을 수 없음", content = @Content(schema = @Schema(hidden = true)))
     })
     @GetMapping("/surveys/{surveyId}")
-    public ResponseEntity<UserSurveyResultDto> getUserCreatedSurveyResult(
-            @Parameter(hidden = true) Authentication authentication,
-            @PathVariable("surveyId") Long surveyId) {
+    public ResponseEntity<UserSurveyResultDto> getUserCreatedSurveyResult(@PathVariable("surveyId") Long surveyId) {
         return ResponseEntity.ok(
-                surveyService.getUserCreatedSurveyResult(authentication, surveyId));
+                surveyService.getUserCreatedSurveyResult(surveyId));
     }
 
     @Operation(summary = "사용자 정보 수정", description = "요청한 사용자의 정보를 수정합니다.")
@@ -95,11 +93,9 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "요청한 리소스 찾을 수 없음", content = @Content(schema = @Schema(hidden = true)))
     })
     @PatchMapping("/profile")
-    public ResponseEntity<UserResponseDto> updateUserProfile(
-            @Parameter(hidden = true) Authentication authentication,
-            @RequestBody UserUpdateRequestDto userUpdateRequestDto) {
+    public ResponseEntity<UserResponseDto> updateUserProfile(@RequestBody UserUpdateRequestDto userUpdateRequestDto) {
         return ResponseEntity.ok(
-                userService.updateUserProfile(authentication, userUpdateRequestDto));
+                userService.updateUserProfile(userUpdateRequestDto));
     }
 
     @Operation(summary = "사용자 인증 정보 조회", description = "사용자의 인증 정보를 조회합니다.")
@@ -111,10 +107,8 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "요청한 리소스 찾을 수 없음", content = @Content(schema = @Schema(hidden = true)))
     })
     @GetMapping("/profile/certifications")
-    public ResponseEntity<UserCertificationListDto> getUserCertification(
-            @Parameter(hidden = true) Authentication authentication) {
-        return ResponseEntity.ok(
-                userCertificationService.getUserCertifications(authentication));
+    public ResponseEntity<UserCertificationListDto> getUserCertification() {
+        return ResponseEntity.ok(userCertificationService.getUserCertifications());
     }
 
     @Operation(summary = "사용자 인증 정보 수정", description = "사용자의 인증 정보를 수정합니다.")

@@ -1,11 +1,5 @@
 package com.thesurvey.api.service;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
 import com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType;
 import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
@@ -27,12 +21,18 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -112,9 +112,10 @@ public class PointHistoryServiceTest {
             new UsernamePasswordAuthenticationToken(userRegisterRequestDto.getEmail(),
                 userRegisterRequestDto.getPassword())
         );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
         assertThrows(BadRequestExceptionMapper.class,
-            () -> surveyService.createSurvey(authentication,
-                surveyRequestDto));
+            () -> surveyService.createSurvey(surveyRequestDto));
     }
 
     @Test
@@ -182,8 +183,10 @@ public class PointHistoryServiceTest {
                 userRegisterRequestDto.getPassword())
         );
 
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
         // when
-        surveyService.createSurvey(authentication, surveyRequestDto);
+        surveyService.createSurvey(surveyRequestDto);
 
         // then
         assertEquals(pointHistoryService.getUserTotalPoint(testUserResponseDto.getUserId()),
@@ -230,9 +233,9 @@ public class PointHistoryServiceTest {
             new UsernamePasswordAuthenticationToken(userRegisterRequestDto.getEmail(),
                 userRegisterRequestDto.getPassword())
         );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        SurveyResponseDto testSurveyResponseDto = surveyService.createSurvey(authentication,
-            surveyRequestDto);
+        SurveyResponseDto testSurveyResponseDto = surveyService.createSurvey(surveyRequestDto);
 
         List<QuestionBankResponseDto> testQuestionResponseList =
             testSurveyResponseDto.getQuestions();
@@ -250,6 +253,7 @@ public class PointHistoryServiceTest {
         Authentication submitUserAuthentication = authenticationService.authenticate(
             new UsernamePasswordAuthenticationToken(submitUserRequestDto.getEmail(),
                 submitUserRequestDto.getPassword()));
+        SecurityContextHolder.getContext().setAuthentication(submitUserAuthentication);
 
         AnsweredQuestionDto answeredQuestionDto = AnsweredQuestionDto.builder()
             .questionBankId(testQuestionResponseList.get(0).getQuestionBankId())
@@ -264,7 +268,7 @@ public class PointHistoryServiceTest {
             .build();
 
         // when
-        answeredQuestionService.createAnswer(submitUserAuthentication, answeredQuestionRequestDto);
+        answeredQuestionService.createAnswer(answeredQuestionRequestDto);
 
         // then
         assertEquals(pointHistoryService.getUserTotalPoint(submitUserResponseDto.getUserId()),

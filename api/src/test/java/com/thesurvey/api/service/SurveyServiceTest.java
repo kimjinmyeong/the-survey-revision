@@ -1,9 +1,5 @@
 package com.thesurvey.api.service;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.List;
-
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
 import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
 import com.thesurvey.api.domain.Survey;
@@ -25,11 +21,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -134,7 +133,7 @@ public class SurveyServiceTest {
             .build();
 
         assertThrows(BadRequestExceptionMapper.class,
-            () -> surveyService.createSurvey(fakeAuthentication, surveyRequestDto));
+            () -> surveyService.createSurvey(surveyRequestDto));
     }
 
     /**
@@ -201,7 +200,7 @@ public class SurveyServiceTest {
             .build();
 
         assertThrows(BadRequestExceptionMapper.class,
-            () -> surveyService.createSurvey(fakeAuthentication, surveyRequestDto));
+            () -> surveyService.createSurvey(surveyRequestDto));
         assertThrows(BadRequestExceptionMapper.class,
             () -> surveyService.validateUpdateSurvey(survey, surveyUpdateRequestDto));
     }

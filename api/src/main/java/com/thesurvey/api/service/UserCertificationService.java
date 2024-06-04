@@ -11,6 +11,7 @@ import com.thesurvey.api.util.UserUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +28,8 @@ public class UserCertificationService {
     private final UserCertificationMapper userCertificationMapper;
 
     @Transactional(readOnly = true)
-    public UserCertificationListDto getUserCertifications(Authentication authentication) {
+    public UserCertificationListDto getUserCertifications() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = UserUtil.getUserIdFromAuthentication(authentication);
         return userCertificationMapper.toUserCertificationListDto(userId);
     }
