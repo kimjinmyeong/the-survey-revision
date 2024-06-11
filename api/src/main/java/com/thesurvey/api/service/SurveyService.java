@@ -21,6 +21,7 @@ import com.thesurvey.api.exception.mapper.ForbiddenRequestExceptionMapper;
 import com.thesurvey.api.exception.mapper.NotFoundExceptionMapper;
 import com.thesurvey.api.repository.AnsweredQuestionRepository;
 import com.thesurvey.api.repository.SurveyRepository;
+import com.thesurvey.api.repository.UserRepository;
 import com.thesurvey.api.service.mapper.QuestionBankMapper;
 import com.thesurvey.api.service.mapper.QuestionOptionMapper;
 import com.thesurvey.api.service.mapper.SurveyMapper;
@@ -66,6 +67,8 @@ public class SurveyService {
     private final PointUtil pointUtil;
 
     private final AnsweredQuestionRepository answeredQuestionRepository;
+
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public SurveyListPageDto getAllSurvey(int page) {
@@ -166,7 +169,9 @@ public class SurveyService {
         questionService.createQuestion(surveyRequestDto.getQuestions(), survey);
 
         int surveyCreatePoints = pointUtil.calculateSurveyCreatePoints(survey.getSurveyId());
-        pointUtil.validateUserPoint(surveyCreatePoints, user.getUserId());
+        user.updatePoint(user.getPoint() - surveyCreatePoints);
+        userRepository.save(user);
+        pointUtil.validateUserPoint(surveyCreatePoints, user.getPoint());
 
         participationService.createParticipation(user, certificationTypes, survey);
         pointHistoryService.savePointHistory(user, -surveyCreatePoints);
@@ -188,9 +193,10 @@ public class SurveyService {
         }
 
         int surveyCreatePoints = pointUtil.calculateSurveyCreatePoints(survey.getSurveyId());
+        user.updatePoint(user.getPoint() + surveyCreatePoints);
+        userRepository.save(user);
         pointHistoryService.savePointHistory(user, surveyCreatePoints);
         participationService.deleteParticipation(surveyId);
-        answeredQuestionService.deleteAnswer(surveyId);
         questionService.deleteQuestion(surveyId);
         surveyRepository.delete(survey);
 

@@ -57,7 +57,6 @@ public class AuthenticationService {
         pointHistoryRepository.save(
             PointHistory.builder()
                 .user(user)
-                .point(PointHistory.USER_INITIAL_POINT)
                 .transactionDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
                 .build()
         );

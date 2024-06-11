@@ -3,20 +3,13 @@ package com.thesurvey.api.service.mapper;
 import com.thesurvey.api.domain.User;
 import com.thesurvey.api.dto.request.user.UserRegisterRequestDto;
 import com.thesurvey.api.dto.response.user.UserResponseDto;
-import com.thesurvey.api.service.PointHistoryService;
 import com.thesurvey.api.util.StringUtil;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserMapper {
-    private final PointHistoryService pointHistoryService;
-
-    public UserMapper(PointHistoryService pointHistoryService) {
-        this.pointHistoryService = pointHistoryService;
-    }
 
     public User toUser(UserRegisterRequestDto userRegisterRequestDto) {
         return User
@@ -27,6 +20,7 @@ public class UserMapper {
             .phoneNumber(userRegisterRequestDto.getPhoneNumber())
             .address(StringUtil.trim(userRegisterRequestDto.getAddress()))
             .profileImage(userRegisterRequestDto.getProfileImage())
+            .point(User.USER_INITIAL_POINT)
             .build();
     }
 
@@ -41,7 +35,7 @@ public class UserMapper {
             .profileImage(user.getProfileImage())
             .createdDate(user.getCreatedDate())
             .modifiedDate(user.getModifiedDate())
-            .point(pointHistoryService.getUserTotalPoint(user.getUserId()))
+            .point(user.getPoint())
             .build();
     }
 

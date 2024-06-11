@@ -53,6 +53,8 @@ public class AnsweredQuestionService {
 
     private final PointUtil pointUtil;
 
+    private final UserRepository userRepository;
+
     @Transactional
     public List<AnsweredQuestion> getAnswerQuestionByQuestionBankId(Long questionBankId) {
         return answeredQuestionRepository.findAllByQuestionBankId(questionBankId);
@@ -126,7 +128,8 @@ public class AnsweredQuestionService {
                 getCertificationTypeList(surveyCertificationList);
         participationService.createParticipation(user, certificationTypeList, survey);
         pointHistoryService.savePointHistory(user, rewardPoints);
-
+        user.updatePoint(user.getPoint() + rewardPoints);
+        userRepository.save(user);
         return AnsweredQuestionRewardPointDto.builder().rewardPoints(rewardPoints).build();
     }
 

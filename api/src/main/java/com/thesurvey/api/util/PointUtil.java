@@ -5,7 +5,6 @@ import com.thesurvey.api.domain.QuestionBank;
 import com.thesurvey.api.exception.ErrorMessage;
 import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import com.thesurvey.api.repository.QuestionBankRepository;
-import com.thesurvey.api.service.PointHistoryService;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -17,11 +16,8 @@ public class PointUtil {
 
     private final QuestionBankRepository questionBankRepository;
 
-    private final PointHistoryService pointHistoryService;
-
-    public PointUtil(QuestionBankRepository questionBankRepository, PointHistoryService pointHistoryService) {
+    public PointUtil(QuestionBankRepository questionBankRepository) {
         this.questionBankRepository = questionBankRepository;
-        this.pointHistoryService = pointHistoryService;
     }
 
     public int calculateSurveyCreatePoints(Long surveyId) {
@@ -83,8 +79,7 @@ public class PointUtil {
         return maxRewardPoints;
     }
 
-    public void validateUserPoint(int surveyCreatePoint, Long userId) {
-        int userTotalPoint = pointHistoryService.getUserTotalPoint(userId);
+    public void validateUserPoint(int surveyCreatePoint, int userTotalPoint) {
         if (userTotalPoint - surveyCreatePoint < 0) {
             throw new BadRequestExceptionMapper(ErrorMessage.SURVEY_CREATE_POINT_NOT_ENOUGH);
         }

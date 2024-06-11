@@ -1,10 +1,8 @@
 package com.thesurvey.api.controller;
 
 
-import java.util.UUID;
-
 import com.thesurvey.api.domain.EnumTypeEntity.Role;
-import com.thesurvey.api.domain.PointHistory;
+import com.thesurvey.api.domain.User;
 import com.thesurvey.api.dto.request.user.UserLoginRequestDto;
 import com.thesurvey.api.dto.request.user.UserRegisterRequestDto;
 import com.thesurvey.api.repository.UserRepository;
@@ -16,7 +14,6 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,6 +22,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -70,7 +69,7 @@ public class AuthenticationControllerTest extends BaseControllerTest {
         assertThat(content.get("name")).isEqualTo(userRegisterRequestDto.getName());
         assertThat(content.get("role")).isEqualTo(String.valueOf(Role.USER));
         assertThat(content.get("email")).isEqualTo(userRegisterRequestDto.getEmail());
-        assertThat(content.get("point")).isEqualTo(PointHistory.USER_INITIAL_POINT);
+        assertThat(content.get("point")).isEqualTo(User.USER_INITIAL_POINT);
     }
 
     @Test
