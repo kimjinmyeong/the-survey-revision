@@ -129,7 +129,6 @@ public class AnsweredQuestionService {
         participationService.createParticipation(user, certificationTypeList, survey);
         pointHistoryService.savePointHistory(user, rewardPoints);
         user.updatePoint(user.getPoint() + rewardPoints);
-        System.out.println("###########" + user.getPoint());
         userRepository.save(user);
         return AnsweredQuestionRewardPointDto.builder().rewardPoints(rewardPoints).build();
     }
