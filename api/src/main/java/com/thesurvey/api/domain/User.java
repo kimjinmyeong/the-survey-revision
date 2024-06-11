@@ -55,7 +55,7 @@ public class User extends BaseTimeEntity implements UserDetails {
     private List<UserCertification> userCertifications;
 
     @OneToMany(
-        mappedBy = "pointHistoryId.user",
+        mappedBy = "user",
         cascade = CascadeType.ALL,
         orphanRemoval = true
     )
@@ -100,11 +100,16 @@ public class User extends BaseTimeEntity implements UserDetails {
     @Column(name = "role", nullable = false)
     private Role role = Role.USER;
 
+    public static final int USER_INITIAL_POINT = 50;
+
+    @Column
+    private Integer point = USER_INITIAL_POINT;
+
     @Builder
     public User(List<Participation> participations, List<AnsweredQuestion> answeredQuestions,
         List<UserCertification> userCertification,
         List<PointHistory>pointHistories, String email, String name, String password,
-        String phoneNumber, String address, String profileImage) {
+        String phoneNumber, String address, String profileImage, Integer point) {
         this.participations = participations;
         this.answeredQuestions = answeredQuestions;
         this.pointHistories = pointHistories;
@@ -115,6 +120,7 @@ public class User extends BaseTimeEntity implements UserDetails {
         this.phoneNumber = phoneNumber;
         this.address = address;
         this.profileImage = profileImage;
+        this.point = point;
     }
 
     public void changePassword(String password) {
@@ -147,6 +153,10 @@ public class User extends BaseTimeEntity implements UserDetails {
 
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    public void updatePoint(Integer point) {
+        this.point = point;
     }
 
     @Override
