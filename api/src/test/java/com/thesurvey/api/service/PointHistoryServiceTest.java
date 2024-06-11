@@ -3,7 +3,7 @@ package com.thesurvey.api.service;
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
 import com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType;
 import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
-import com.thesurvey.api.domain.PointHistory;
+import com.thesurvey.api.domain.User;
 import com.thesurvey.api.dto.request.answeredQuestion.AnsweredQuestionDto;
 import com.thesurvey.api.dto.request.answeredQuestion.AnsweredQuestionRequestDto;
 import com.thesurvey.api.dto.request.question.QuestionOptionRequestDto;
@@ -68,6 +68,8 @@ public class PointHistoryServiceTest {
     UserRegisterRequestDto userRegisterRequestDto;
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    @Autowired
+    private UserService userService;
 
     @BeforeAll
     void setupBeforeAll() {
@@ -189,8 +191,9 @@ public class PointHistoryServiceTest {
         surveyService.createSurvey(surveyRequestDto);
 
         // then
-        assertEquals(pointHistoryService.getUserTotalPoint(testUserResponseDto.getUserId()),
-            PointHistory.USER_INITIAL_POINT -
+        UserResponseDto user = userService.getUserByName(testUserResponseDto.getName());
+        assertEquals(user.getPoint(),
+            User.USER_INITIAL_POINT -
                 (PointTransactionType.LONG_ANSWER_CONSUME.getTransactionPoint()
                     + PointTransactionType.SHORT_ANSWER_CONSUME.getTransactionPoint()
                     + PointTransactionType.SINGLE_CHOICE_CONSUME.getTransactionPoint()));
@@ -271,8 +274,9 @@ public class PointHistoryServiceTest {
         answeredQuestionService.createAnswer(answeredQuestionRequestDto);
 
         // then
-        assertEquals(pointHistoryService.getUserTotalPoint(submitUserResponseDto.getUserId()),
-            PointHistory.USER_INITIAL_POINT + PointTransactionType.LONG_ANSWER_REWARD.getTransactionPoint());
+        UserResponseDto user = userService.getUserByName(submitUserResponseDto.getName());
+        assertEquals(user.getPoint(),
+            User.USER_INITIAL_POINT + PointTransactionType.LONG_ANSWER_REWARD.getTransactionPoint());
     }
 
 }
