@@ -8,6 +8,17 @@ services:
   #   ports:
   #     - 3000:3000
 
+#  api:
+#    container_name: api
+#    build: ./api
+#    network_mode: bridge
+#    ports:
+#      - 8080:8080
+#    restart: unless-stopped
+#    depends_on:
+#      - db
+#    links:
+#      - db
   db:
     container_name: db
     image: postgres:14-alpine
@@ -17,32 +28,97 @@ services:
     ports:
       - 5432:5432
     environment:
-         - POSTGRES_PASSWORD=the_survey_dev
-         - POSTGRES_USER=the_survey_dev
-         - POSTGRES_DB=the_survey_dev
+      - POSTGRES_PASSWORD=the_survey_revision
+      - POSTGRES_USER=the_survey_revision
+      - POSTGRES_DB=the_survey_revision
     restart: unless-stopped
 
   redis:
-    container_name: redis
-    image: redis:6-alpine
-    network_mode: bridge
+    image: 'bitnami/redis:latest'
+    environment:
+      - REDIS_REPLICATION_MODE=master
+      - ALLOW_EMPTY_PASSWORD=yes
+    networks:
+      - redis-network
     ports:
       - 6379:6379
-    volumes:
-      - redis:/data
-    restart: unless-stopped
-
-  api:
-    container_name: api
-    build: ./api
-    network_mode: bridge
+  redis-slave-1:
+    image: 'bitnami/redis:latest'
+    environment:
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=redis
+      - ALLOW_EMPTY_PASSWORD=yes
     ports:
-      - 8080:8080
-    restart: unless-stopped
+      - 6479:6379
     depends_on:
-      - db
-    links:
-      - db
+      - redis
+    networks:
+      - redis-network
+  redis-slave-2:
+    image: 'bitnami/redis:latest'
+    environment:
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=redis
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - 6579:6379
+    depends_on:
+      - redis
+    networks:
+      - redis-network
+
+  redis-sentinel1:
+    image: 'bitnami/redis-sentinel:latest'
+    environment:
+      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=60000
+      - REDIS_MASTER_HOST=redis
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_MASTER_SET=mymaster
+      - REDIS_SENTINEL_QUORUM=2
+    depends_on:
+      - redis
+      - redis-slave-1
+      - redis-slave-2
+    ports:
+      - '26379:26379'
+    networks:
+      -  redis-network
+  redis-sentinel2:
+    image: 'bitnami/redis-sentinel:latest'
+    environment:
+      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=60000
+      - REDIS_MASTER_HOST=redis
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_MASTER_SET=mymaster
+      - REDIS_SENTINEL_QUORUM=2
+    depends_on:
+      - redis
+      - redis-slave-1
+      - redis-slave-2
+    ports:
+      - '26380:26379'
+    networks:
+      - redis-network
+  redis-sentinel3:
+    image: 'bitnami/redis-sentinel:latest'
+    environment:
+      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=60000
+      - REDIS_MASTER_HOST=redis
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_MASTER_SET=mymaster
+      - REDIS_SENTINEL_QUORUM=2
+    depends_on:
+      - redis
+      - redis-slave-1
+      - redis-slave-2
+    ports:
+      - '26381:26379'
+    networks:
+      - redis-network
+
+networks:
+  redis-network:
+    driver: bridge
 
 volumes:
   postgres: {}
