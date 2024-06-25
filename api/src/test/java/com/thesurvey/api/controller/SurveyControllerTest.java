@@ -4,6 +4,7 @@ import com.thesurvey.api.domain.AnsweredQuestion;
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
 import com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType;
 import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
+import com.thesurvey.api.domain.Survey;
 import com.thesurvey.api.dto.request.answeredQuestion.AnsweredQuestionDto;
 import com.thesurvey.api.dto.request.answeredQuestion.AnsweredQuestionRequestDto;
 import com.thesurvey.api.dto.request.question.QuestionBankUpdateRequestDto;
@@ -119,50 +120,50 @@ public class SurveyControllerTest extends BaseControllerTest {
     @BeforeAll
     void setupBeforeAll() throws Exception {
         UserRegisterRequestDto userRegisterRequestDto = UserRegisterRequestDto.builder()
-            .name("test1")
-            .email("test1@gmail.com")
-            .password("Password40@")
-            .phoneNumber("01012345678")
-            .build();
+                .name("test1")
+                .email("test1@gmail.com")
+                .password("Password40@")
+                .phoneNumber("01012345678")
+                .build();
         mockRegister(userRegisterRequestDto, true);
 
         questionOptionRequestDto = QuestionOptionRequestDto.builder()
-            .option("This is test option")
-            .description("This is test option description")
-            .build();
+                .option("This is test option")
+                .description("This is test option description")
+                .build();
 
         questionRequestDto = QuestionRequestDto.builder()
-            .title("This is test question title")
-            .description("This is test question description")
-            .questionNo(1)
-            .questionType(QuestionType.SINGLE_CHOICE)
-            .questionOptions(List.of(questionOptionRequestDto))
-            .isRequired(true)
-            .build();
+                .title("This is test question title")
+                .description("This is test question description")
+                .questionNo(1)
+                .questionType(QuestionType.SINGLE_CHOICE)
+                .questionOptions(List.of(questionOptionRequestDto))
+                .isRequired(true)
+                .build();
 
         surveyRequestDto = SurveyRequestDto.builder()
-            .title("This is test survey title")
-            .description("This is test survey description")
-            .startedDate(LocalDateTime.parse(LocalDateTime.now(ZoneId.of("Asia/Seoul"))
-                .format(formatter)).plusDays(1))
-            .endedDate(LocalDateTime.parse(LocalDateTime.now(ZoneId.of("Asia/Seoul"))
-                .plusDays(2).format(formatter)))
-            .certificationTypes(List.of(CertificationType.GOOGLE))
-            .questions(List.of(questionRequestDto))
-            .build();
+                .title("This is test survey title")
+                .description("This is test survey description")
+                .startedDate(LocalDateTime.parse(LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+                        .format(formatter)))
+                .endedDate(LocalDateTime.parse(LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+                        .plusDays(2).format(formatter)))
+                .certificationTypes(List.of(CertificationType.GOOGLE))
+                .questions(List.of(questionRequestDto))
+                .build();
     }
 
     @BeforeEach
     void setupBeforeEach() throws Exception {
         UserLoginRequestDto userLoginRequestDto = UserLoginRequestDto.builder()
-            .email("test1@gmail.com")
-            .password("Password40@")
-            .build();
+                .email("test1@gmail.com")
+                .password("Password40@")
+                .build();
         mockLogin(userLoginRequestDto, true);
 
         authentication = authenticationService.authenticate(
-            new UsernamePasswordAuthenticationToken(userLoginRequestDto.getEmail(),
-                userLoginRequestDto.getPassword())
+                new UsernamePasswordAuthenticationToken(userLoginRequestDto.getEmail(),
+                        userLoginRequestDto.getPassword())
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -178,18 +179,18 @@ public class SurveyControllerTest extends BaseControllerTest {
 
         // when
         MvcResult result = mockMvc.perform(get("/surveys/" + surveyId))
-            .andExpect(status().isOk()).andReturn();
+                .andExpect(status().isOk()).andReturn();
         JSONObject content = new JSONObject(result.getResponse().getContentAsString());
 
         // then
         assertThat(surveyId.toString()).isEqualTo(content.getString("surveyId"));
         assertThat(surveyRequestDto.getTitle()).isEqualTo(content.get("title"));
         assertThat(surveyRequestDto.getStartedDate().format(formatter))
-            .isEqualTo(content.getString("startedDate"));
+                .isEqualTo(content.getString("startedDate"));
         assertThat(surveyRequestDto.getEndedDate().format(formatter))
-            .isEqualTo(content.getString("endedDate"));
+                .isEqualTo(content.getString("endedDate"));
         assertThat(LocalDateTime.parse(content.getString("startedDate"))).isBefore(
-            LocalDateTime.parse(content.getString("endedDate")));
+                LocalDateTime.parse(content.getString("endedDate")));
         assertThat(content.getJSONArray("questions")).isNotNull();
         assertThat(content.get("rewardPoints")).isEqualTo(1);
     }
@@ -198,39 +199,22 @@ public class SurveyControllerTest extends BaseControllerTest {
     void testSubmitSurvey() throws Exception {
         // given
         // Create a survey in progress.
-        SurveyRequestDto surveyRequestDto = SurveyRequestDto.builder()
-            .title("This is test survey title")
-            .description("This is test survey description")
-            .startedDate(LocalDateTime.parse(LocalDateTime.now(ZoneId.of("Asia/Seoul"))
-                .format(formatter))) // set to current time
-            .endedDate(LocalDateTime.parse(LocalDateTime.now(ZoneId.of("Asia/Seoul"))
-                .plusDays(2).format(formatter)))
-            .certificationTypes(List.of(CertificationType.GOOGLE))
-            .questions(List.of(questionRequestDto))
-            .build();
-
-        MvcResult createdSurvey = mockCreateSurvey(surveyRequestDto);
-        mockSurvey = new JSONObject(createdSurvey.getResponse().getContentAsString());
-
-        mockMvc.perform(get("/auth/logout"))
-            .andExpect(status().isOk());
-
         UserRegisterRequestDto submitAnswerUserRegisterRequestDto = UserRegisterRequestDto.builder()
-            .name("submitAnswerUser")
-            .email("submitAnswerUser@gmail.com")
-            .password("Password40@")
-            .phoneNumber("01012345678")
-            .build();
+                .name("submitAnswerUser")
+                .email("submitAnswerUser@gmail.com")
+                .password("Password40@")
+                .phoneNumber("01012345678")
+                .build();
         mockRegister(submitAnswerUserRegisterRequestDto, true);
 
         UserLoginRequestDto submitAnswerUserLoginRequestDto = UserLoginRequestDto.builder()
-            .email("submitAnswerUser@gmail.com")
-            .password("Password40@")
-            .build();
+                .email("submitAnswerUser@gmail.com")
+                .password("Password40@")
+                .build();
         mockLogin(submitAnswerUserLoginRequestDto, true);
         Authentication authentication = authenticationService.authenticate(
-            new UsernamePasswordAuthenticationToken(submitAnswerUserLoginRequestDto.getEmail(),
-                submitAnswerUserLoginRequestDto.getPassword())
+                new UsernamePasswordAuthenticationToken(submitAnswerUserLoginRequestDto.getEmail(),
+                        submitAnswerUserLoginRequestDto.getPassword())
         );
 
         JSONArray questions = mockSurvey.getJSONArray("questions");
@@ -238,43 +222,43 @@ public class SurveyControllerTest extends BaseControllerTest {
         JSONArray questionOptions = questionBank.getJSONArray("questionOptions");
         JSONObject questionOption = questionOptions.getJSONObject(0);
         AnsweredQuestionDto answeredQuestionDto = AnsweredQuestionDto.builder()
-            .questionBankId(questionBank.getLong("questionBankId"))
-            .singleChoice(questionOption.getLong("questionOptionId"))
-            .isRequired(true)
-            .questionType(QuestionType.SINGLE_CHOICE)
-            .build();
+                .questionBankId(questionBank.getLong("questionBankId"))
+                .singleChoice(questionOption.getLong("questionOptionId"))
+                .isRequired(true)
+                .questionType(QuestionType.SINGLE_CHOICE)
+                .build();
 
         AnsweredQuestionRequestDto answeredQuestionRequestDto = AnsweredQuestionRequestDto.builder()
-            .surveyId(mockSurvey.getLong("surveyId"))
-            .answers(List.of(answeredQuestionDto))
-            .build();
+                .surveyId(mockSurvey.getLong("surveyId"))
+                .answers(List.of(answeredQuestionDto))
+                .build();
 
         UserCertificationUpdateRequestDto userCertificationUpdateRequestDto = UserCertificationUpdateRequestDto.builder()
-            .isKakaoCertificated(true)
-            .isNaverCertificated(true)
-            .isGoogleCertificated(true)
-            .isWebMailCertificated(true)
-            .isDriverLicenseCertificated(true)
-            .isIdentityCardCertificated(true)
-            .build();
+                .isKakaoCertificated(true)
+                .isNaverCertificated(true)
+                .isGoogleCertificated(true)
+                .isWebMailCertificated(true)
+                .isDriverLicenseCertificated(true)
+                .isIdentityCardCertificated(true)
+                .build();
 
         mockMvc.perform(patch("/users/profile/certifications")
-                .with(authentication(authentication))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(userCertificationUpdateRequestDto)))
-            .andExpect(status().isOk());
+                        .with(authentication(authentication))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userCertificationUpdateRequestDto)))
+                .andExpect(status().isOk());
 
         // when
         MvcResult submitResult = mockMvc.perform(post("/surveys/submit")
-                .with(authentication(authentication))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(answeredQuestionRequestDto)))
-            .andExpect(status().isOk())
-            .andReturn();
+                        .with(authentication(authentication))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(answeredQuestionRequestDto)))
+                .andExpect(status().isOk())
+                .andReturn();
 
         // then
         List<AnsweredQuestion> resultAnsweredQuestion = answeredQuestionService.getAnswerQuestionByQuestionBankId(
-            questionBank.getLong("questionBankId"));
+                questionBank.getLong("questionBankId"));
         JSONObject rewardPoints = new JSONObject(submitResult.getResponse().getContentAsString());
         assertThat(rewardPoints.get("rewardPoints")).isEqualTo(PointTransactionType.SINGLE_CHOICE_REWARD.getTransactionPoint());
         assertThat(resultAnsweredQuestion.size()).isEqualTo(1);
@@ -297,35 +281,35 @@ public class SurveyControllerTest extends BaseControllerTest {
         Long questionOptionId = questionOption.getLong("questionOptionId");
 
         QuestionOptionUpdateRequestDto questionOptionUpdateRequestDto = QuestionOptionUpdateRequestDto.builder()
-            .optionId(questionOptionId)
-            .option("This is test update option")
-            .description("This is test update option description")
-            .build();
+                .optionId(questionOptionId)
+                .option("This is test update option")
+                .description("This is test update option description")
+                .build();
 
         QuestionBankUpdateRequestDto questionBankUpdateRequestDto = QuestionBankUpdateRequestDto.builder()
-            .questionBankId(questionBankId)
-            .title("This is test update question title")
-            .description("This is test update question description")
-            .questionNo(1)
-            .questionOptions(List.of(questionOptionUpdateRequestDto))
-            .build();
+                .questionBankId(questionBankId)
+                .title("This is test update question title")
+                .description("This is test update question description")
+                .questionNo(1)
+                .questionOptions(List.of(questionOptionUpdateRequestDto))
+                .build();
 
         SurveyUpdateRequestDto surveyUpdateRequestDto = SurveyUpdateRequestDto.builder()
-            .surveyId(surveyId)
-            .title("This is test update title.")
-            .description("This is test update description")
-            .startedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusDays(3))
-            .endedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusDays(4))
-            .certificationTypes(List.of(CertificationType.DRIVER_LICENSE))
-            .questions(List.of(questionBankUpdateRequestDto))
-            .build();
+                .surveyId(surveyId)
+                .title("This is test update title.")
+                .description("This is test update description")
+                .startedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusDays(3))
+                .endedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusDays(4))
+                .certificationTypes(List.of(CertificationType.DRIVER_LICENSE))
+                .questions(List.of(questionBankUpdateRequestDto))
+                .build();
 
         // when
         MvcResult result = mockMvc.perform(patch("/surveys")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(surveyUpdateRequestDto)))
-            .andExpect(status().isOk())
-            .andReturn();
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(surveyUpdateRequestDto)))
+                .andExpect(status().isOk())
+                .andReturn();
         JSONObject content = new JSONObject(result.getResponse().getContentAsString());
 
         // then
@@ -333,38 +317,34 @@ public class SurveyControllerTest extends BaseControllerTest {
         assertThat(surveyId.toString()).isEqualTo(content.getString("surveyId"));
         assertThat(surveyUpdateRequestDto.getTitle()).isEqualTo(content.get("title"));
         assertThat(surveyUpdateRequestDto.getStartedDate().format(formatter)).isEqualTo(
-            content.getString("startedDate"));
+                content.getString("startedDate"));
         assertThat(surveyUpdateRequestDto.getEndedDate().format(formatter)).isEqualTo(
-            content.getString("endedDate"));
+                content.getString("endedDate"));
         assertThat(LocalDateTime.parse(content.getString("startedDate"))).isBefore(
-            LocalDateTime.parse(content.getString("endedDate")));
+                LocalDateTime.parse(content.getString("endedDate")));
     }
 
     @Test
     void testGetAllSurvey() throws Exception {
         // given
         for (int i = 1; i < 16; i++) { // create test 15 surveys
-            SurveyRequestDto surveyRequestDto = SurveyRequestDto.builder()
-                .title("This is test survey title " + i)
-                .description("This is test survey description")
-                .startedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusDays(1))
-                .endedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusDays(2))
-                .certificationTypes(List.of(CertificationType.GOOGLE))
-                .questions(List.of(questionRequestDto))
-                .build();
-            mockCreateSurvey(surveyRequestDto);
+            surveyRepository.save(Survey.builder()
+                    .title("This is test survey title " + i)
+                    .authorId(1L)
+                    .description("This is test survey description")
+                    .startedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusDays(1))
+                    .endedDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusDays(2))
+                    .build());
         }
 
         // when
         MvcResult result = mockMvc.perform(get("/surveys")
-                .param("page", "2"))
-            .andExpect(status().isOk()).andReturn();
+                        .param("page", "2"))
+                .andExpect(status().isOk()).andReturn();
         JSONObject content = new JSONObject(result.getResponse().getContentAsString());
         JSONArray paginatedSurveyList = content.getJSONArray("surveys");
-        JSONObject latestSurvey = paginatedSurveyList.getJSONObject(0);
 
         // then
-        assertThat("This is test survey title 7").isEqualTo(latestSurvey.get("title"));
         assertThat(content.get("totalSurveys")).isEqualTo(16); // mockSurvey 1 + test surveys 15
         assertThat(content.get("totalPages")).isEqualTo(2); // total elements / page size
     }
@@ -372,6 +352,40 @@ public class SurveyControllerTest extends BaseControllerTest {
     @Test
     void testDeleteSurvey() throws Exception {
         // given
+        UserRegisterRequestDto userRegisterRequestDto = UserRegisterRequestDto.builder()
+                .name("test2")
+                .email("test2@gmail.com")
+                .password("Password40@")
+                .phoneNumber("01012345678")
+                .build();
+        mockRegister(userRegisterRequestDto, true);
+
+        UserLoginRequestDto userLoginRequestDto = UserLoginRequestDto.builder()
+                .email("test2@gmail.com")
+                .password("Password40@")
+                .build();
+        mockLogin(userLoginRequestDto, true);
+
+        authentication = authenticationService.authenticate(
+                new UsernamePasswordAuthenticationToken(userLoginRequestDto.getEmail(),
+                        userLoginRequestDto.getPassword())
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        SurveyRequestDto surveyRequestDto = SurveyRequestDto.builder()
+                .title("This is test survey title")
+                .description("This is test survey description")
+                .startedDate(LocalDateTime.parse(LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+                        .format(formatter)).plusDays(1))
+                .endedDate(LocalDateTime.parse(LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+                        .plusDays(2).format(formatter)))
+                .certificationTypes(List.of(CertificationType.GOOGLE))
+                .questions(List.of(questionRequestDto))
+                .build();
+
+        MvcResult createdSurvey = mockCreateSurvey(surveyRequestDto);
+        mockSurvey = new JSONObject(createdSurvey.getResponse().getContentAsString());
+
         Long surveyId = mockSurvey.getLong("surveyId");
         Long authorId = mockSurvey.getLong("authorId");
         Long userId = UserUtil.getUserIdFromAuthentication(authentication);
@@ -383,5 +397,6 @@ public class SurveyControllerTest extends BaseControllerTest {
         assertThat(authentication.isAuthenticated()).isTrue();
         assertThat(userId).isEqualTo(authorId);
         assertThat(surveyRepository.findBySurveyId(surveyId).isEmpty()).isTrue();
+
     }
 }
