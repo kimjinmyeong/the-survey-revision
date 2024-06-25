@@ -20,6 +20,7 @@ import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import com.thesurvey.api.exception.mapper.ForbiddenRequestExceptionMapper;
 import com.thesurvey.api.exception.mapper.NotFoundExceptionMapper;
 import com.thesurvey.api.repository.AnsweredQuestionRepository;
+import com.thesurvey.api.repository.QuestionBankRepository;
 import com.thesurvey.api.repository.SurveyRepository;
 import com.thesurvey.api.repository.UserRepository;
 import com.thesurvey.api.service.mapper.QuestionBankMapper;
@@ -29,6 +30,8 @@ import com.thesurvey.api.util.PointUtil;
 import com.thesurvey.api.util.StringUtil;
 import com.thesurvey.api.util.UserUtil;
 import lombok.RequiredArgsConstructor;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
@@ -36,10 +39,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.LockTimeoutException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -70,6 +76,12 @@ public class SurveyService {
 
     private final UserRepository userRepository;
 
+    private final QuestionBankRepository questionBankRepository;
+
+    private final RedissonClient redissonClient;
+
+    private final long TIMEOUT_SECONDS = 5;
+
     @Transactional(readOnly = true)
     public SurveyListPageDto getAllSurvey(int page) {
         // page starts from 1
@@ -78,13 +90,13 @@ public class SurveyService {
         }
 
         Page<Survey> surveyPage = surveyRepository.findAllInDescendingOrder(
-            PageRequest.of(page - 1, 8));
+                PageRequest.of(page - 1, 8));
         if (surveyPage.getTotalElements() != 0 && surveyPage.getTotalPages() < page) {
             throw new NotFoundExceptionMapper(ErrorMessage.PAGE_NOT_FOUND);
         }
 
         List<SurveyPageDto> surveyPageDtoList = surveyPage.getContent().stream()
-            .map(surveyMapper::toSurveyPageDto).collect(Collectors.toList());
+                .map(surveyMapper::toSurveyPageDto).collect(Collectors.toList());
         return surveyMapper.toSurveyListPageDto(surveyPageDtoList, surveyPage);
     }
 
@@ -93,7 +105,7 @@ public class SurveyService {
         Survey survey = getSurveyFromSurveyId(surveyId);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         List<Integer> surveyCertificationList =
-            surveyRepository.findCertificationTypeBySurveyIdAndAuthorId(surveyId, survey.getAuthorId());
+                surveyRepository.findCertificationTypeBySurveyIdAndAuthorId(surveyId, survey.getAuthorId());
         Long userId = UserUtil.getUserIdFromAuthentication(authentication);
 
         // validate if the user has completed the necessary certifications for the survey
@@ -111,8 +123,11 @@ public class SurveyService {
 
     @Transactional(readOnly = true)
     public List<UserSurveyTitleDto> getUserCreatedSurveys(Authentication authentication) {
-        return surveyRepository.findUserCreatedSurveysByAuthorID(
-            UserUtil.getUserIdFromAuthentication(authentication));
+        Long authorId = UserUtil.getUserIdFromAuthentication(authentication);
+        List<Survey> surveys = surveyRepository.findUserCreatedSurveysByAuthorID(authorId);
+        return surveys.stream()
+                .map(survey -> new UserSurveyTitleDto(survey.getSurveyId(), survey.getTitle()))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -129,7 +144,7 @@ public class SurveyService {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         validateSurveyAuthor(UserUtil.getUserIdFromAuthentication(authentication),
-            survey.getAuthorId());
+                survey.getAuthorId());
 
         // validate if the survey has not yet started
         if (survey.getStartedDate().isAfter(LocalDateTime.now(ZoneId.of("Asia/Seoul")))) {
@@ -146,35 +161,38 @@ public class SurveyService {
     @Transactional
     public SurveyResponseDto createSurvey(SurveyRequestDto surveyRequestDto) {
 
-        // `startedDate` is only allowed to be within 5 seconds from now or later.
-        if (surveyRequestDto.getStartedDate()
-            .isBefore(LocalDateTime.now(ZoneId.of("Asia/Seoul")).minusSeconds(5))) {
-            throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISBEFORE_CURRENTDATE);
-        }
+        // calculate survey need point
+        int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
+                .mapToInt(questionRequestDto -> pointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
+                .sum();
 
-        // validate for when the start time of the survey is set after the end time.
-        if (surveyRequestDto.getStartedDate().isAfter(surveyRequestDto.getEndedDate())) {
-            throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISAFTER_ENDEDDATE);
-        }
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = UserUtil.getUserFromAuthentication(authentication);
-
+        // fetch need certification
         List<CertificationType> certificationTypes =
-            surveyRequestDto.getCertificationTypes().isEmpty()
-                ? List.of(CertificationType.NONE) : surveyRequestDto.getCertificationTypes();
+                surveyRequestDto.getCertificationTypes().isEmpty()
+                        ? List.of(CertificationType.NONE) : surveyRequestDto.getCertificationTypes();
 
-        Survey survey = surveyRepository.save(surveyMapper.toSurvey(surveyRequestDto,
-            user.getUserId()));
-        questionService.createQuestion(surveyRequestDto.getQuestions(), survey);
-
-        int surveyCreatePoints = pointUtil.calculateSurveyCreatePoints(survey.getSurveyId());
-        user.updatePoint(user.getPoint() - surveyCreatePoints);
-        userRepository.save(user);
-        pointUtil.validateUserPoint(surveyCreatePoints, user.getPoint());
-
-        participationService.createParticipation(user, certificationTypes, survey);
+        RLock lock = redissonClient.getLock("createSurveyLock");
+        boolean isLocked = false;
+        User user;
+        try {
+            isLocked = lock.tryLock(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!isLocked) {
+                throw new LockTimeoutException("지금은 설문조사를 생성할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+            }
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            user = UserUtil.getUserFromAuthentication(authentication);
+            validateCreateSurvey(surveyRequestDto, user);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("스레드가 중단되었습니다.", e);
+        } finally {
+            if (isLocked) {
+                lock.unlock();
+            }
+        }
         pointHistoryService.savePointHistory(user, -surveyCreatePoints);
+        Survey survey = surveyRepository.save(surveyMapper.toSurvey(surveyRequestDto, user.getUserId()));
+        questionService.createQuestion(surveyRequestDto.getQuestions(), survey);
+        participationService.createParticipation(user, certificationTypes, survey);
         return surveyMapper.toSurveyResponseDto(survey, user.getUserId());
     }
 
@@ -188,13 +206,17 @@ public class SurveyService {
 
         // validate for attempts to delete a started survey.
         if (survey.getStartedDate().isBefore(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
-            && LocalDateTime.now(ZoneId.of("Asia/Seoul")).isBefore(survey.getEndedDate())) {
+                && LocalDateTime.now(ZoneId.of("Asia/Seoul")).isBefore(survey.getEndedDate())) {
             throw new BadRequestExceptionMapper(ErrorMessage.SURVEY_ALREADY_STARTED);
         }
 
-        int surveyCreatePoints = pointUtil.calculateSurveyCreatePoints(survey.getSurveyId());
+        List<QuestionBank> questionBankList = questionBankRepository.findAllBySurveyId(surveyId);
+        int surveyCreatePoints = questionBankList.stream()
+                .mapToInt(questionBank -> pointUtil.calculateSurveyCreatePoints(questionBank.getQuestionType()))
+                .sum();
         user.updatePoint(user.getPoint() + surveyCreatePoints);
         userRepository.save(user);
+
         pointHistoryService.savePointHistory(user, surveyCreatePoints);
         participationService.deleteParticipation(surveyId);
         questionService.deleteQuestion(surveyId);
@@ -237,22 +259,61 @@ public class SurveyService {
 
         // validate for when to modify a survey that has already been started.
         if (survey.getStartedDate()
-            .isBefore(LocalDateTime.now(ZoneId.of("Asia/Seoul")).minusSeconds(5))) {
+                .isBefore(LocalDateTime.now(ZoneId.of("Asia/Seoul")).minusSeconds(5))) {
             throw new BadRequestExceptionMapper(ErrorMessage.SURVEY_ALREADY_STARTED);
         }
 
         // validate for when the start time of the survey is set after the end time.
         if (surveyUpdateRequestDto.getEndedDate()
-            .isBefore(surveyUpdateRequestDto.getStartedDate())) {
+                .isBefore(surveyUpdateRequestDto.getStartedDate())) {
             throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISAFTER_ENDEDDATE);
         }
 
         // `startedDate` is only allowed to be within 5 seconds from now or later.
         if (surveyUpdateRequestDto.getStartedDate()
-            .isBefore(LocalDateTime.now(ZoneId.of("Asia/Seoul")).minusSeconds(5))) {
+                .isBefore(LocalDateTime.now(ZoneId.of("Asia/Seoul")).minusSeconds(5))) {
             throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISBEFORE_CURRENTDATE);
         }
 
+    }
+
+    public void validateUserPoint(User user, Integer surveyCreatePoints) {
+        if (user.getPoint() - surveyCreatePoints < 0) {
+            throw new BadRequestExceptionMapper(ErrorMessage.SURVEY_CREATE_POINT_NOT_ENOUGH);
+        }
+        user.updatePoint(user.getPoint() - surveyCreatePoints);
+        userRepository.saveAndFlush(user);
+    }
+
+    private void validateCreateSurvey(SurveyRequestDto surveyRequestDto, User user) {
+        // validate that the survey's start date is not more than 5 seconds in the past.
+        if (surveyRequestDto.getStartedDate()
+                .isBefore(LocalDateTime.now(ZoneId.of("Asia/Seoul")).minusSeconds(5))) {
+            throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISBEFORE_CURRENTDATE);
+        }
+
+        // Validate that the survey's start date is not after its end date.
+        if (surveyRequestDto.getStartedDate().isAfter(surveyRequestDto.getEndedDate())) {
+            throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISAFTER_ENDEDDATE);
+        }
+
+        // Validate that the user has enough points to create the survey.
+        int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
+                .mapToInt(questionRequestDto -> pointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
+                .sum();
+        validateUserPoint(user, surveyCreatePoints);
+
+        // Validate that at least 30 seconds have passed since the user's last survey creation.
+        List<Survey> surveys = surveyRepository.findUserCreatedSurveysByAuthorID(user.getUserId());
+        if (surveys.isEmpty()) {
+            return;
+        }
+        LocalDateTime userRecentCreateTime = surveys.get(surveys.size() - 1).getCreatedDate();
+        Duration duration = Duration.between(userRecentCreateTime, LocalDateTime.now(ZoneId.of("Asia/Seoul")));
+        long secondsDifference = Math.abs(duration.getSeconds());
+        if (secondsDifference < 30) {
+            throw new BadRequestExceptionMapper(ErrorMessage.USER_CREATE_SURVEY_RECENT);
+        }
     }
 
     private void validateSurveyAuthor(Long userId, Long authorId) {
@@ -263,7 +324,7 @@ public class SurveyService {
 
     private Survey getSurveyFromSurveyId(Long surveyId) {
         return surveyRepository.findBySurveyId(surveyId)
-            .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.SURVEY_NOT_FOUND));
+                .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.SURVEY_NOT_FOUND));
     }
 
     private List<QuestionBankAnswerDto> getQuestionBankAnswerDtoList(List<QuestionBank> questionBankList) {
@@ -272,22 +333,22 @@ public class SurveyService {
             QuestionType questionType = questionBank.getQuestionType();
             Long questionBankId = questionBank.getQuestionBankId();
             Integer questionNo = questionService.getQuestionNoByQuestionBankId(
-                questionBank.getQuestionBankId());
+                    questionBank.getQuestionBankId());
             List<AnsweredQuestion> answeredQuestionList = answeredQuestionService.getAnswerQuestionByQuestionBankId(
-                questionBank.getQuestionBankId());
+                    questionBank.getQuestionBankId());
 
             List<QuestionOptionAnswerDto> questionOptionAnswerDtoList = new ArrayList<>();
             List<String> shortLongAnswerList = new ArrayList<>();
 
             if (questionType == QuestionType.SINGLE_CHOICE || questionType == QuestionType.MULTIPLE_CHOICES) {
                 questionOptionAnswerDtoList = getQuestionOptionAnswerDtoList(questionBankId,
-                    questionType);
+                        questionType);
             } else if (questionType == QuestionType.SHORT_ANSWER || questionType == QuestionType.LONG_ANSWER) {
                 shortLongAnswerList = getShortLongAnswerList(questionType, answeredQuestionList);
             }
 
             questionBankAnswerDtoList.add(questionBankMapper.toQuestionBankAnswerDto(questionBank,
-                questionNo, shortLongAnswerList, questionOptionAnswerDtoList));
+                    questionNo, shortLongAnswerList, questionOptionAnswerDtoList));
         }
 
         return questionBankAnswerDtoList;
@@ -303,24 +364,24 @@ public class SurveyService {
      * @return {@code List<QuestionOptionAnswerDto>}
      */
     private List<QuestionOptionAnswerDto> getQuestionOptionAnswerDtoList(Long questionBankId,
-        QuestionType questionType) {
+                                                                         QuestionType questionType) {
         List<Long[]> answeredChoiceList = new ArrayList<>();
         if (questionType == QuestionType.SINGLE_CHOICE) {
             answeredChoiceList = answeredQuestionService.getSingleChoiceResult(
-                questionBankId);
+                    questionBankId);
         } else if (questionType == QuestionType.MULTIPLE_CHOICES) {
             answeredChoiceList = answeredQuestionService.getMultipleChoiceResult(
-                questionBankId);
+                    questionBankId);
         }
 
         return answeredChoiceList.stream()
-            .map(answeredChoiceResult -> {
-                Long questionOptionId = answeredChoiceResult[0];
-                Long totalResponseCount = answeredChoiceResult[1];
-                String option = questionOptionService.getOptionByQuestionOptionId(questionOptionId);
-                return questionOptionMapper.toQuestionOptionAnswerDto(questionOptionId, option, totalResponseCount);
-            })
-            .collect(Collectors.toList());
+                .map(answeredChoiceResult -> {
+                    Long questionOptionId = answeredChoiceResult[0];
+                    Long totalResponseCount = answeredChoiceResult[1];
+                    String option = questionOptionService.getOptionByQuestionOptionId(questionOptionId);
+                    return questionOptionMapper.toQuestionOptionAnswerDto(questionOptionId, option, totalResponseCount);
+                })
+                .collect(Collectors.toList());
 
     }
 
@@ -335,7 +396,7 @@ public class SurveyService {
      * @return {@code List<String>}
      */
     private List<String> getShortLongAnswerList(QuestionType questionType,
-        List<AnsweredQuestion> answeredQuestionList) {
+                                                List<AnsweredQuestion> answeredQuestionList) {
 
         List<String> shortLongAnswerList = new ArrayList<>();
         if (questionType == QuestionType.SHORT_ANSWER) {
@@ -349,14 +410,14 @@ public class SurveyService {
 
     private List<String> getShortAnswerList(List<AnsweredQuestion> answeredQuestionList) {
         return answeredQuestionList.stream()
-            .map(AnsweredQuestion::getShortAnswer)
-            .collect(Collectors.toList());
+                .map(AnsweredQuestion::getShortAnswer)
+                .collect(Collectors.toList());
     }
 
     private List<String> getLongAnswerList(List<AnsweredQuestion> answeredQuestionList) {
         return answeredQuestionList.stream()
-            .map(AnsweredQuestion::getLongAnswer)
-            .collect(Collectors.toList());
+                .map(AnsweredQuestion::getLongAnswer)
+                .collect(Collectors.toList());
     }
 
 }

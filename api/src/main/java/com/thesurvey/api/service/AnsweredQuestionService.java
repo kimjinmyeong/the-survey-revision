@@ -17,17 +17,21 @@ import com.thesurvey.api.util.PointUtil;
 import com.thesurvey.api.util.StringUtil;
 import com.thesurvey.api.util.UserUtil;
 import lombok.RequiredArgsConstructor;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.LockTimeoutException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +59,10 @@ public class AnsweredQuestionService {
 
     private final UserRepository userRepository;
 
+    private final RedissonClient redissonClient;
+
+    private final long TIMEOUT_SECONDS = 5;
+
     @Transactional
     public List<AnsweredQuestion> getAnswerQuestionByQuestionBankId(Long questionBankId) {
         return answeredQuestionRepository.findAllByQuestionBankId(questionBankId);
@@ -76,12 +84,40 @@ public class AnsweredQuestionService {
         User user = UserUtil.getUserFromAuthentication(authentication);
         Survey survey = surveyRepository.findBySurveyId(answeredQuestionRequestDto.getSurveyId())
                 .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.SURVEY_NOT_FOUND));
-
         List<Integer> surveyCertificationList = surveyRepository.findCertificationTypeBySurveyIdAndAuthorId(
                 survey.getSurveyId(), survey.getAuthorId());
-        validateUserCompletedCertification(surveyCertificationList, user.getUserId());
-        validateCreateAnswerRequest(user, survey);
+        List<CertificationType> convertedCertificationTypeList =
+                getCertificationTypeList(surveyCertificationList);
 
+        RLock lock = redissonClient.getLock("createAnswerLock");
+        boolean isLocked = false;
+        try {
+            isLocked = lock.tryLock(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!isLocked) {
+                throw new LockTimeoutException("지금은 답변을 제출할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+            }
+            validateUserCompletedCertification(surveyCertificationList, user.getUserId());
+            validateCreateAnswerRequest(user, survey);
+            int rewardPoints = getRewardPoints(answeredQuestionRequestDto, survey, user);
+            updateUserPoint(user, rewardPoints);
+            participationService.createParticipation(user, convertedCertificationTypeList, survey);
+            return AnsweredQuestionRewardPointDto.builder().rewardPoints(rewardPoints).build();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("스레드가 중단되었습니다.");
+        } finally {
+            if (isLocked) {
+                lock.unlock();
+            }
+        }
+    }
+
+    private void updateUserPoint(User user, int rewardPoints) {
+        pointHistoryService.savePointHistory(user, rewardPoints);
+        user.updatePoint(user.getPoint() + rewardPoints);
+        userRepository.save(user);
+    }
+
+    private int getRewardPoints(AnsweredQuestionRequestDto answeredQuestionRequestDto, Survey survey, User user) {
         int rewardPoints = 0;
         boolean isAnswered = false;
         for (AnsweredQuestionDto answeredQuestionDto : answeredQuestionRequestDto.getAnswers()) {
@@ -109,12 +145,11 @@ public class AnsweredQuestionService {
                         answeredQuestionMapper.toAnsweredQuestion(answeredQuestionDto, user, question.get()));
             } else {
                 // In case it's multiple choice question
-                List<AnsweredQuestion> answeredQuestionList = answeredQuestionDto.getMultipleChoices()
-                        .stream()
-                        .map(choice -> answeredQuestionMapper.toAnsweredQuestionWithMultipleChoices(
-                                user, question.get(), choice))
-                        .collect(Collectors.toList());
-
+                List<AnsweredQuestion> answeredQuestionList = new ArrayList<>();
+                for (long choice : answeredQuestionDto.getMultipleChoices()) {
+                    AnsweredQuestion answeredQuestion = answeredQuestionMapper.toAnsweredQuestionWithMultipleChoices(user, question.get(), choice);
+                    answeredQuestionList.add(answeredQuestion);
+                }
                 answeredQuestionRepository.saveAll(answeredQuestionList);
             }
             rewardPoints += getQuestionBankRewardPoints(answeredQuestionDto);
@@ -123,14 +158,7 @@ public class AnsweredQuestionService {
         if (!isAnswered) {
             throw new BadRequestExceptionMapper(ErrorMessage.ANSWER_AT_LEAST_ONE_QUESTION);
         }
-
-        List<CertificationType> certificationTypeList =
-                getCertificationTypeList(surveyCertificationList);
-        participationService.createParticipation(user, certificationTypeList, survey);
-        pointHistoryService.savePointHistory(user, rewardPoints);
-        user.updatePoint(user.getPoint() + rewardPoints);
-        userRepository.save(user);
-        return AnsweredQuestionRewardPointDto.builder().rewardPoints(rewardPoints).build();
+        return rewardPoints;
     }
 
     @Transactional
