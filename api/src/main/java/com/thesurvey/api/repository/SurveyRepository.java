@@ -1,12 +1,6 @@
 package com.thesurvey.api.repository;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import com.thesurvey.api.domain.Survey;
-import com.thesurvey.api.dto.response.user.UserSurveyTitleDto;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,8 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
+
 @Repository
-public interface SurveyRepository extends JpaRepository<Survey, UUID> {
+public interface SurveyRepository extends JpaRepository<Survey, Long> {
 
     @Query("SELECT s FROM Survey s WHERE s.endedDate > CURRENT_TIMESTAMP ORDER BY s.createdDate DESC")
     Page<Survey> findAllInDescendingOrder(Pageable pageable);
@@ -25,7 +22,7 @@ public interface SurveyRepository extends JpaRepository<Survey, UUID> {
 
     Optional<Survey> findBySurveyId(Long surveyId);
 
-    @Query("SELECT new com.thesurvey.api.dto.response.user.UserSurveyTitleDto(s.surveyId, s.title) FROM Survey s WHERE s.authorId = :authorId ORDER BY s.createdDate DESC")
-    List<UserSurveyTitleDto> findUserCreatedSurveysByAuthorID(@Param("authorId") Long authorId);
+    @Query("SELECT s FROM Survey s WHERE s.authorId = :authorId ORDER BY s.createdDate DESC")
+    List<Survey> findUserCreatedSurveysByAuthorID(@Param("authorId") Long authorId);
 
 }
