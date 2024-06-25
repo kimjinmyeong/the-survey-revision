@@ -171,16 +171,15 @@ public class SurveyService {
                 surveyRequestDto.getCertificationTypes().isEmpty()
                         ? List.of(CertificationType.NONE) : surveyRequestDto.getCertificationTypes();
 
-        RLock lock = redissonClient.getLock("createSurveyLock");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User user = UserUtil.getUserFromAuthentication(authentication);
+        RLock lock = redissonClient.getLock("createSurveyLock:" + user.getEmail());
         boolean isLocked = false;
-        User user;
         try {
             isLocked = lock.tryLock(TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!isLocked) {
                 throw new LockTimeoutException("지금은 설문조사를 생성할 수 없습니다. 잠시 후 다시 시도해 주세요.");
             }
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            user = UserUtil.getUserFromAuthentication(authentication);
             validateCreateSurvey(surveyRequestDto, user);
         } catch (InterruptedException e) {
             throw new RuntimeException("스레드가 중단되었습니다.", e);

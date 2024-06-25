@@ -89,7 +89,7 @@ public class AnsweredQuestionService {
         List<CertificationType> convertedCertificationTypeList =
                 getCertificationTypeList(surveyCertificationList);
 
-        RLock lock = redissonClient.getLock("createAnswerLock");
+        RLock lock = redissonClient.getLock("createAnswerLock" + user.getEmail());
         boolean isLocked = false;
         try {
             isLocked = lock.tryLock(TIMEOUT_SECONDS, TimeUnit.SECONDS);
