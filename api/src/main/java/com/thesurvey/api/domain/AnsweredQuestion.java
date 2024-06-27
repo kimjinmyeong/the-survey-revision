@@ -9,7 +9,9 @@ import javax.persistence.*;
 import javax.validation.constraints.Size;
 
 @Entity
-@Table(name = "answered_question")
+@Table(name = "answered_question", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"survey_id", "user_id"})
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AnsweredQuestion {
@@ -46,7 +48,7 @@ public class AnsweredQuestion {
 
     @Builder
     public AnsweredQuestion(Long singleChoice, Long multipleChoice, String shortAnswer,
-        String longAnswer, Question question, User user) {
+                            String longAnswer, Question question, User user) {
         this.shortAnswer = shortAnswer;
         this.longAnswer = longAnswer;
         this.singleChoice = singleChoice;

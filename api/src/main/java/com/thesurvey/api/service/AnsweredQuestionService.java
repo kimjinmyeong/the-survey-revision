@@ -17,21 +17,17 @@ import com.thesurvey.api.util.PointUtil;
 import com.thesurvey.api.util.StringUtil;
 import com.thesurvey.api.util.UserUtil;
 import lombok.RequiredArgsConstructor;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.LockTimeoutException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -59,10 +55,6 @@ public class AnsweredQuestionService {
 
     private final UserRepository userRepository;
 
-    private final RedissonClient redissonClient;
-
-    private final long TIMEOUT_SECONDS = 5;
-
     @Transactional
     public List<AnsweredQuestion> getAnswerQuestionByQuestionBankId(Long questionBankId) {
         return answeredQuestionRepository.findAllByQuestionBankId(questionBankId);
@@ -86,29 +78,13 @@ public class AnsweredQuestionService {
                 .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.SURVEY_NOT_FOUND));
         List<Integer> surveyCertificationList = surveyRepository.findCertificationTypeBySurveyIdAndAuthorId(
                 survey.getSurveyId(), survey.getAuthorId());
-        List<CertificationType> convertedCertificationTypeList =
-                getCertificationTypeList(surveyCertificationList);
-
-        RLock lock = redissonClient.getLock("createAnswerLock" + user.getEmail());
-        boolean isLocked = false;
-        try {
-            isLocked = lock.tryLock(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!isLocked) {
-                throw new LockTimeoutException("지금은 답변을 제출할 수 없습니다. 잠시 후 다시 시도해 주세요.");
-            }
-            validateUserCompletedCertification(surveyCertificationList, user.getUserId());
-            validateCreateAnswerRequest(user, survey);
-            int rewardPoints = getRewardPoints(answeredQuestionRequestDto, survey, user);
-            updateUserPoint(user, rewardPoints);
-            participationService.createParticipation(user, convertedCertificationTypeList, survey);
-            return AnsweredQuestionRewardPointDto.builder().rewardPoints(rewardPoints).build();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("스레드가 중단되었습니다.");
-        } finally {
-            if (isLocked) {
-                lock.unlock();
-            }
-        }
+        List<CertificationType> convertedCertificationTypeList = getCertificationTypeList(surveyCertificationList);
+        validateUserCompletedCertification(surveyCertificationList, user.getUserId());
+        validateCreateAnswerRequest(user, survey);
+        int rewardPoints = getRewardPoints(answeredQuestionRequestDto, survey, user);
+        updateUserPoint(user, rewardPoints);
+        participationService.createParticipation(user, convertedCertificationTypeList, survey);
+        return AnsweredQuestionRewardPointDto.builder().rewardPoints(rewardPoints).build();
     }
 
     private void updateUserPoint(User user, int rewardPoints) {
