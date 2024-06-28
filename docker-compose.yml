@@ -44,93 +44,93 @@ services:
     ports:
       - '6379:6379'
 
-  redis-slave-1:
-    container_name: redis-slave-1
-    image: 'bitnami/redis:latest'
-    environment:
-      - REDIS_REPLICATION_MODE=slave
-      - REDIS_MASTER_HOST=redis-master
-      - ALLOW_EMPTY_PASSWORD=yes
-    depends_on:
-      - redis-master
-    networks:
-      - redis-network
-    ports:
-      - '6380:6379'
+  # redis-slave-1:
+  #   container_name: redis-slave-1
+  #   image: 'bitnami/redis:latest'
+  #   environment:
+  #     - REDIS_REPLICATION_MODE=slave
+  #     - REDIS_MASTER_HOST=redis-master
+  #     - ALLOW_EMPTY_PASSWORD=yes
+  #   depends_on:
+  #     - redis-master
+  #   networks:
+  #     - redis-network
+  #   ports:
+  #     - '6380:6379'
 
-  redis-slave-2:
-    container_name: redis-slave-2
-    image: 'bitnami/redis:latest'
-    environment:
-      - REDIS_REPLICATION_MODE=slave
-      - REDIS_MASTER_HOST=redis-master
-      - ALLOW_EMPTY_PASSWORD=yes
-    depends_on:
-      - redis-master
-    networks:
-      - redis-network
-    ports:
-      - '6381:6379'
+  # redis-slave-2:
+  #   container_name: redis-slave-2
+  #   image: 'bitnami/redis:latest'
+  #   environment:
+  #     - REDIS_REPLICATION_MODE=slave
+  #     - REDIS_MASTER_HOST=redis-master
+  #     - ALLOW_EMPTY_PASSWORD=yes
+  #   depends_on:
+  #     - redis-master
+  #   networks:
+  #     - redis-network
+  #   ports:
+  #     - '6381:6379'
 
-  redis-sentinel-1:
-    container_name: redis-sentinel-1
-    image: 'bitnami/redis-sentinel:latest'
-    environment:
-      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=5000
-      - REDIS_SENTINEL_FAILOVER_TIMEOUT=60000
-      - REDIS_SENTINEL_PARALLEL_SYNCS=1
-      - REDIS_MASTER_HOST=redis-master
-      - REDIS_MASTER_PORT_NUMBER=6379
-      - REDIS_MASTER_SET=mymaster
-      - REDIS_SENTINEL_QUORUM=2
-    depends_on:
-      - redis-master
-      - redis-slave-1
-      - redis-slave-2
-    networks:
-      - redis-network
-    ports:
-      - '26379:26379'
+  # redis-sentinel-1:
+  #   container_name: redis-sentinel-1
+  #   image: 'bitnami/redis-sentinel:latest'
+  #   environment:
+  #     - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=5000
+  #     - REDIS_SENTINEL_FAILOVER_TIMEOUT=60000
+  #     - REDIS_SENTINEL_PARALLEL_SYNCS=1
+  #     - REDIS_MASTER_HOST=redis-master
+  #     - REDIS_MASTER_PORT_NUMBER=6379
+  #     - REDIS_MASTER_SET=mymaster
+  #     - REDIS_SENTINEL_QUORUM=2
+  #   depends_on:
+  #     - redis-master
+  #     - redis-slave-1
+  #     - redis-slave-2
+  #   networks:
+  #     - redis-network
+  #   ports:
+  #     - '26379:26379'
 
-  redis-sentinel-2:
-    container_name: redis-sentinel-2
-    image: 'bitnami/redis-sentinel:latest'
-    environment:
-      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=5000
-      - REDIS_SENTINEL_FAILOVER_TIMEOUT=60000
-      - REDIS_SENTINEL_PARALLEL_SYNCS=1
-      - REDIS_MASTER_HOST=redis-master
-      - REDIS_MASTER_PORT_NUMBER=6379
-      - REDIS_MASTER_SET=mymaster
-      - REDIS_SENTINEL_QUORUM=2
-    depends_on:
-      - redis-master
-      - redis-slave-1
-      - redis-slave-2
-    networks:
-      - redis-network
-    ports:
-      - '26380:26379'
+  # redis-sentinel-2:
+  #   container_name: redis-sentinel-2
+  #   image: 'bitnami/redis-sentinel:latest'
+  #   environment:
+  #     - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=5000
+  #     - REDIS_SENTINEL_FAILOVER_TIMEOUT=60000
+  #     - REDIS_SENTINEL_PARALLEL_SYNCS=1
+  #     - REDIS_MASTER_HOST=redis-master
+  #     - REDIS_MASTER_PORT_NUMBER=6379
+  #     - REDIS_MASTER_SET=mymaster
+  #     - REDIS_SENTINEL_QUORUM=2
+  #   depends_on:
+  #     - redis-master
+  #     - redis-slave-1
+  #     - redis-slave-2
+  #   networks:
+  #     - redis-network
+  #   ports:
+  #     - '26380:26379'
 
-  redis-sentinel-3:
-    container_name: redis-sentinel-3
-    image: 'bitnami/redis-sentinel:latest'
-    environment:
-      - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=5000
-      - REDIS_SENTINEL_FAILOVER_TIMEOUT=60000
-      - REDIS_SENTINEL_PARALLEL_SYNCS=1
-      - REDIS_MASTER_HOST=redis-master
-      - REDIS_MASTER_PORT_NUMBER=6379
-      - REDIS_MASTER_SET=mymaster
-      - REDIS_SENTINEL_QUORUM=2
-    depends_on:
-      - redis-master
-      - redis-slave-1
-      - redis-slave-2
-    networks:
-      - redis-network
-    ports:
-      - '26381:26379'
+  # redis-sentinel-3:
+  #   container_name: redis-sentinel-3
+  #   image: 'bitnami/redis-sentinel:latest'
+  #   environment:
+  #     - REDIS_SENTINEL_DOWN_AFTER_MILLISECONDS=5000
+  #     - REDIS_SENTINEL_FAILOVER_TIMEOUT=60000
+  #     - REDIS_SENTINEL_PARALLEL_SYNCS=1
+  #     - REDIS_MASTER_HOST=redis-master
+  #     - REDIS_MASTER_PORT_NUMBER=6379
+  #     - REDIS_MASTER_SET=mymaster
+  #     - REDIS_SENTINEL_QUORUM=2
+  #   depends_on:
+  #     - redis-master
+  #     - redis-slave-1
+  #     - redis-slave-2
+  #   networks:
+  #     - redis-network
+  #   ports:
+  #     - '26381:26379'
 
 networks:
   redis-network:
