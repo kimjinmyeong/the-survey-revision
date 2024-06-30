@@ -9,9 +9,7 @@ import javax.persistence.*;
 import javax.validation.constraints.Size;
 
 @Entity
-@Table(name = "answered_question", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"survey_id", "user_id"})
-})
+@Table(name = "answered_question")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AnsweredQuestion {
