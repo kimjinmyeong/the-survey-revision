@@ -82,13 +82,6 @@ public class AnsweredQuestionService {
     public AnsweredQuestionRewardPointDto createAnswer(AnsweredQuestionRequestDto answeredQuestionRequestDto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = UserUtil.getUserFromAuthentication(authentication);
-        Survey survey = surveyRepository.findBySurveyId(answeredQuestionRequestDto.getSurveyId())
-                .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.SURVEY_NOT_FOUND));
-        List<Integer> surveyCertificationList = surveyRepository.findCertificationTypeBySurveyIdAndAuthorId(
-                survey.getSurveyId(), survey.getAuthorId());
-        List<CertificationType> convertedCertificationTypeList =
-                getCertificationTypeList(surveyCertificationList);
-
         RLock lock = redissonClient.getLock("createAnswerLock: " + user.getEmail());
         boolean isLocked = false;
         try {
@@ -96,9 +89,19 @@ public class AnsweredQuestionService {
             if (!isLocked) {
                 throw new LockTimeoutException("지금은 답변을 제출할 수 없습니다. 잠시 후 다시 시도해 주세요.");
             }
+
+            Survey survey = surveyRepository.findBySurveyId(answeredQuestionRequestDto.getSurveyId())
+                    .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.SURVEY_NOT_FOUND));
+            List<Integer> surveyCertificationList = surveyRepository.findCertificationTypeBySurveyIdAndAuthorId(
+                    survey.getSurveyId(), survey.getAuthorId());
+            List<CertificationType> convertedCertificationTypeList =
+                    getCertificationTypeList(surveyCertificationList);
+
             validateUserCompletedCertification(surveyCertificationList, user.getUserId());
             validateCreateAnswerRequest(user, survey);
-            int rewardPoints = getRewardPoints(answeredQuestionRequestDto, survey, user);
+
+            int rewardPoints = getRewardPoints(answeredQuestionRequestDto);
+            saveAnswers(answeredQuestionRequestDto, survey, user);
             updateUserPoint(user, rewardPoints);
             participationService.createParticipation(user, convertedCertificationTypeList, survey);
             return AnsweredQuestionRewardPointDto.builder().rewardPoints(rewardPoints).build();
@@ -117,7 +120,7 @@ public class AnsweredQuestionService {
         userRepository.save(user);
     }
 
-    private int getRewardPoints(AnsweredQuestionRequestDto answeredQuestionRequestDto, Survey survey, User user) {
+    private int getRewardPoints(AnsweredQuestionRequestDto answeredQuestionRequestDto) {
         int rewardPoints = 0;
         boolean isAnswered = false;
         for (AnsweredQuestionDto answeredQuestionDto : answeredQuestionRequestDto.getAnswers()) {
@@ -127,7 +130,16 @@ public class AnsweredQuestionService {
             if (!isAnswered && !validateEmptyAnswer(answeredQuestionDto)) {
                 isAnswered = true;
             }
+            rewardPoints += getQuestionBankRewardPoints(answeredQuestionDto);
+        }
+        if (!isAnswered) {
+            throw new BadRequestExceptionMapper(ErrorMessage.ANSWER_AT_LEAST_ONE_QUESTION);
+        }
+        return rewardPoints;
+    }
 
+    private void saveAnswers(AnsweredQuestionRequestDto answeredQuestionRequestDto, Survey survey, User user) {
+        for (AnsweredQuestionDto answeredQuestionDto : answeredQuestionRequestDto.getAnswers()) {
             QuestionBank questionBank = questionBankRepository.findByQuestionBankId(
                     answeredQuestionDto.getQuestionBankId()).orElseThrow(
                     () -> new NotFoundExceptionMapper(ErrorMessage.QUESTION_BANK_NOT_FOUND));
@@ -152,13 +164,7 @@ public class AnsweredQuestionService {
                 }
                 answeredQuestionRepository.saveAll(answeredQuestionList);
             }
-            rewardPoints += getQuestionBankRewardPoints(answeredQuestionDto);
-
         }
-        if (!isAnswered) {
-            throw new BadRequestExceptionMapper(ErrorMessage.ANSWER_AT_LEAST_ONE_QUESTION);
-        }
-        return rewardPoints;
     }
 
     @Transactional
