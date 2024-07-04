@@ -18,6 +18,7 @@ import com.thesurvey.api.dto.response.user.UserSurveyTitleDto;
 import com.thesurvey.api.exception.ErrorMessage;
 import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import com.thesurvey.api.exception.mapper.ForbiddenRequestExceptionMapper;
+import com.thesurvey.api.exception.mapper.LockTimeoutExceptionMapper;
 import com.thesurvey.api.exception.mapper.NotFoundExceptionMapper;
 import com.thesurvey.api.repository.AnsweredQuestionRepository;
 import com.thesurvey.api.repository.QuestionBankRepository;
@@ -39,7 +40,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.LockTimeoutException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -178,7 +178,7 @@ public class SurveyService {
         try {
             isLocked = lock.tryLock(TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!isLocked) {
-                throw new LockTimeoutException("지금은 설문조사를 생성할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+                throw new LockTimeoutExceptionMapper(ErrorMessage.LOCK_TIMEOUT);
             }
             validateCreateSurvey(surveyRequestDto, user);
         } catch (InterruptedException e) {
@@ -285,9 +285,19 @@ public class SurveyService {
     }
 
     private void validateCreateSurvey(SurveyRequestDto surveyRequestDto, User user) {
-        // validate that the survey's start date is not more than 5 seconds in the past.
-        if (surveyRequestDto.getStartedDate()
-                .isBefore(LocalDateTime.now(ZoneId.of("Asia/Seoul")).minusSeconds(5))) {
+        validateSurveyDates(surveyRequestDto);
+        int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
+                .mapToInt(questionRequestDto -> pointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
+                .sum();
+        validateUserPoint(user, surveyCreatePoints);
+        validateRecentSurveyCreation(user);
+    }
+
+    private void validateSurveyDates(SurveyRequestDto surveyRequestDto) {
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+
+        // Validate that the survey's start date is not more than 5 seconds in the past.
+        if (surveyRequestDto.getStartedDate().isBefore(now.minusSeconds(5))) {
             throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISBEFORE_CURRENTDATE);
         }
 
@@ -295,22 +305,17 @@ public class SurveyService {
         if (surveyRequestDto.getStartedDate().isAfter(surveyRequestDto.getEndedDate())) {
             throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISAFTER_ENDEDDATE);
         }
+    }
 
-        // Validate that the user has enough points to create the survey.
-        int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
-                .mapToInt(questionRequestDto -> pointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
-                .sum();
-        validateUserPoint(user, surveyCreatePoints);
-
-        // Validate that at least 30 seconds have passed since the user's last survey creation.
+    private void validateRecentSurveyCreation(User user) {
         List<Survey> surveys = surveyRepository.findUserCreatedSurveysByAuthorID(user.getUserId());
         if (surveys.isEmpty()) {
             return;
         }
         LocalDateTime userRecentCreateTime = surveys.get(surveys.size() - 1).getCreatedDate();
-        Duration duration = Duration.between(userRecentCreateTime, LocalDateTime.now(ZoneId.of("Asia/Seoul")));
-        long secondsDifference = Math.abs(duration.getSeconds());
-        if (secondsDifference < 30) {
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        Duration duration = Duration.between(userRecentCreateTime, now);
+        if (duration.getSeconds() < 30) {
             throw new BadRequestExceptionMapper(ErrorMessage.USER_CREATE_SURVEY_RECENT);
         }
     }
