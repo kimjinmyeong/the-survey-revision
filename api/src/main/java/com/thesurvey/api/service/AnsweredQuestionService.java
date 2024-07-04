@@ -6,10 +6,7 @@ import com.thesurvey.api.dto.request.answeredQuestion.AnsweredQuestionDto;
 import com.thesurvey.api.dto.request.answeredQuestion.AnsweredQuestionRequestDto;
 import com.thesurvey.api.dto.response.answeredQuestion.AnsweredQuestionRewardPointDto;
 import com.thesurvey.api.exception.ErrorMessage;
-import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
-import com.thesurvey.api.exception.mapper.ForbiddenRequestExceptionMapper;
-import com.thesurvey.api.exception.mapper.NotFoundExceptionMapper;
-import com.thesurvey.api.exception.mapper.UnauthorizedRequestExceptionMapper;
+import com.thesurvey.api.exception.mapper.*;
 import com.thesurvey.api.repository.*;
 import com.thesurvey.api.service.converter.CertificationTypeConverter;
 import com.thesurvey.api.service.mapper.AnsweredQuestionMapper;
@@ -24,7 +21,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.LockTimeoutException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -82,14 +78,13 @@ public class AnsweredQuestionService {
     public AnsweredQuestionRewardPointDto createAnswer(AnsweredQuestionRequestDto answeredQuestionRequestDto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = UserUtil.getUserFromAuthentication(authentication);
-        RLock lock = redissonClient.getLock("createAnswerLock: " + user.getEmail());
+        RLock lock = redissonClient.getLock("createAnswerLock:" + user.getEmail());
         boolean isLocked = false;
         try {
             isLocked = lock.tryLock(TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!isLocked) {
-                throw new LockTimeoutException("지금은 답변을 제출할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+                throw new LockTimeoutExceptionMapper(ErrorMessage.LOCK_TIMEOUT);
             }
-
             Survey survey = surveyRepository.findBySurveyId(answeredQuestionRequestDto.getSurveyId())
                     .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.SURVEY_NOT_FOUND));
             List<Integer> surveyCertificationList = surveyRepository.findCertificationTypeBySurveyIdAndAuthorId(
