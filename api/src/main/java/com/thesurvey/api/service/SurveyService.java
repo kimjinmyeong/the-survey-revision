@@ -1,5 +1,6 @@
 package com.thesurvey.api.service;
 
+import com.thesurvey.api.annotation.Lockable;
 import com.thesurvey.api.domain.AnsweredQuestion;
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
 import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
@@ -18,7 +19,6 @@ import com.thesurvey.api.dto.response.user.UserSurveyTitleDto;
 import com.thesurvey.api.exception.ErrorMessage;
 import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import com.thesurvey.api.exception.mapper.ForbiddenRequestExceptionMapper;
-import com.thesurvey.api.exception.mapper.LockTimeoutExceptionMapper;
 import com.thesurvey.api.exception.mapper.NotFoundExceptionMapper;
 import com.thesurvey.api.repository.AnsweredQuestionRepository;
 import com.thesurvey.api.repository.QuestionBankRepository;
@@ -31,13 +31,12 @@ import com.thesurvey.api.util.PointUtil;
 import com.thesurvey.api.util.StringUtil;
 import com.thesurvey.api.util.UserUtil;
 import lombok.RequiredArgsConstructor;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
@@ -45,7 +44,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -77,10 +75,6 @@ public class SurveyService {
     private final UserRepository userRepository;
 
     private final QuestionBankRepository questionBankRepository;
-
-    private final RedissonClient redissonClient;
-
-    private final long TIMEOUT_SECONDS = 5;
 
     @Transactional(readOnly = true)
     public SurveyListPageDto getAllSurvey(int page) {
@@ -158,36 +152,22 @@ public class SurveyService {
         return surveyMapper.toUserSurveyResultDto(survey, questionBankAnswerDtoList);
     }
 
-    @Transactional
+    @Lockable(key = "createSurveyLock")
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public SurveyResponseDto createSurvey(SurveyRequestDto surveyRequestDto) {
-
-        // calculate survey need point
         int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
                 .mapToInt(questionRequestDto -> pointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
                 .sum();
 
-        // fetch need certification
         List<CertificationType> certificationTypes =
                 surveyRequestDto.getCertificationTypes().isEmpty()
                         ? List.of(CertificationType.NONE) : surveyRequestDto.getCertificationTypes();
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = UserUtil.getUserFromAuthentication(authentication);
-        RLock lock = redissonClient.getLock("createSurveyLock:" + user.getEmail());
-        boolean isLocked = false;
-        try {
-            isLocked = lock.tryLock(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!isLocked) {
-                throw new LockTimeoutExceptionMapper(ErrorMessage.LOCK_TIMEOUT);
-            }
-            validateCreateSurvey(surveyRequestDto, user);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("스레드가 중단되었습니다.", e);
-        } finally {
-            if (isLocked) {
-                lock.unlock();
-            }
-        }
+
+        validateCreateSurvey(surveyRequestDto, user);
+
         pointHistoryService.savePointHistory(user, -surveyCreatePoints);
         Survey survey = surveyRepository.save(surveyMapper.toSurvey(surveyRequestDto, user.getUserId()));
         questionService.createQuestion(surveyRequestDto.getQuestions(), survey);
