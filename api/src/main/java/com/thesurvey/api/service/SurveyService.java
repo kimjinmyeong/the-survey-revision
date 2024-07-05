@@ -132,10 +132,8 @@ public class SurveyService {
      */
     @Transactional(readOnly = true)
     public UserSurveyResultDto getUserCreatedSurveyResult(Long surveyId) {
-        Survey survey = getSurveyFromSurveyId(surveyId);
-
         // validate survey author from current user
-
+        Survey survey = getSurveyFromSurveyId(surveyId);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         validateSurveyAuthor(UserUtil.getUserIdFromAuthentication(authentication),
                 survey.getAuthorId());
@@ -146,28 +144,31 @@ public class SurveyService {
         }
 
         List<QuestionBank> questionBanks = questionService.getAllQuestionBankBySurveyId(surveyId);
-
         List<QuestionBankAnswerDto> questionBankAnswerDtoList = getQuestionBankAnswerDtoList(questionBanks);
-
         return surveyMapper.toUserSurveyResultDto(survey, questionBankAnswerDtoList);
     }
 
     @Lockable(key = "createSurveyLock")
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public SurveyResponseDto createSurvey(SurveyRequestDto surveyRequestDto) {
+        // Calculate the points required to create the survey
         int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
                 .mapToInt(questionRequestDto -> pointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
                 .sum();
 
+        // Fetch necessary certification types
         List<CertificationType> certificationTypes =
                 surveyRequestDto.getCertificationTypes().isEmpty()
                         ? List.of(CertificationType.NONE) : surveyRequestDto.getCertificationTypes();
 
+        // Get the authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = UserUtil.getUserFromAuthentication(authentication);
 
+        // Validate the survey creation request
         validateCreateSurvey(surveyRequestDto, user);
 
+        // Save the survey and related data
         pointHistoryService.savePointHistory(user, -surveyCreatePoints);
         Survey survey = surveyRepository.save(surveyMapper.toSurvey(surveyRequestDto, user.getUserId()));
         questionService.createQuestion(surveyRequestDto.getQuestions(), survey);
@@ -200,7 +201,6 @@ public class SurveyService {
         participationService.deleteParticipation(surveyId);
         questionService.deleteQuestion(surveyId);
         surveyRepository.delete(survey);
-
     }
 
     @Transactional
@@ -266,11 +266,11 @@ public class SurveyService {
 
     private void validateCreateSurvey(SurveyRequestDto surveyRequestDto, User user) {
         validateSurveyDates(surveyRequestDto);
+        validateRecentSurveyCreation(user);
         int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
                 .mapToInt(questionRequestDto -> pointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
                 .sum();
         validateUserPoint(user, surveyCreatePoints);
-        validateRecentSurveyCreation(user);
     }
 
     private void validateSurveyDates(SurveyRequestDto surveyRequestDto) {
@@ -314,19 +314,18 @@ public class SurveyService {
     private List<QuestionBankAnswerDto> getQuestionBankAnswerDtoList(List<QuestionBank> questionBankList) {
         List<QuestionBankAnswerDto> questionBankAnswerDtoList = new ArrayList<>();
         for (QuestionBank questionBank : questionBankList) {
+
+            // Fetch the Question details including type, ID, question number, and the list of answered questions.
             QuestionType questionType = questionBank.getQuestionType();
             Long questionBankId = questionBank.getQuestionBankId();
-            Integer questionNo = questionService.getQuestionNoByQuestionBankId(
-                    questionBank.getQuestionBankId());
-            List<AnsweredQuestion> answeredQuestionList = answeredQuestionService.getAnswerQuestionByQuestionBankId(
-                    questionBank.getQuestionBankId());
+            Integer questionNo = questionService.getQuestionNoByQuestionBankId(questionBank.getQuestionBankId());
+            List<AnsweredQuestion> answeredQuestionList = answeredQuestionService.getAnswerQuestionByQuestionBankId(questionBank.getQuestionBankId());
 
+            // Fill the Single/Multiple option answer list or Short/Long answer list based on QuestionType
             List<QuestionOptionAnswerDto> questionOptionAnswerDtoList = new ArrayList<>();
             List<String> shortLongAnswerList = new ArrayList<>();
-
             if (questionType == QuestionType.SINGLE_CHOICE || questionType == QuestionType.MULTIPLE_CHOICES) {
-                questionOptionAnswerDtoList = getQuestionOptionAnswerDtoList(questionBankId,
-                        questionType);
+                questionOptionAnswerDtoList = getQuestionOptionAnswerDtoList(questionBankId, questionType);
             } else if (questionType == QuestionType.SHORT_ANSWER || questionType == QuestionType.LONG_ANSWER) {
                 shortLongAnswerList = getShortLongAnswerList(questionType, answeredQuestionList);
             }
@@ -357,7 +356,6 @@ public class SurveyService {
             answeredChoiceList = answeredQuestionService.getMultipleChoiceResult(
                     questionBankId);
         }
-
         return answeredChoiceList.stream()
                 .map(answeredChoiceResult -> {
                     Long questionOptionId = answeredChoiceResult[0];
@@ -366,7 +364,6 @@ public class SurveyService {
                     return questionOptionMapper.toQuestionOptionAnswerDto(questionOptionId, option, totalResponseCount);
                 })
                 .collect(Collectors.toList());
-
     }
 
     /**
@@ -381,14 +378,12 @@ public class SurveyService {
      */
     private List<String> getShortLongAnswerList(QuestionType questionType,
                                                 List<AnsweredQuestion> answeredQuestionList) {
-
         List<String> shortLongAnswerList = new ArrayList<>();
         if (questionType == QuestionType.SHORT_ANSWER) {
             shortLongAnswerList = getShortAnswerList(answeredQuestionList);
         } else if (questionType == QuestionType.LONG_ANSWER) {
             shortLongAnswerList = getLongAnswerList(answeredQuestionList);
         }
-
         return shortLongAnswerList;
     }
 
