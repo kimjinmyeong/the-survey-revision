@@ -261,7 +261,7 @@ public class SurveyService {
             throw new BadRequestExceptionMapper(ErrorMessage.SURVEY_CREATE_POINT_NOT_ENOUGH);
         }
         user.updatePoint(user.getPoint() - surveyCreatePoints);
-        userRepository.saveAndFlush(user);
+        userRepository.save(user);
     }
 
     private void validateCreateSurvey(SurveyRequestDto surveyRequestDto, User user) {
