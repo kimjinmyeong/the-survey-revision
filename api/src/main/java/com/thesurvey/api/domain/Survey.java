@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.thesurvey.api.exception.ErrorMessage;
 import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
@@ -14,8 +14,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "survey")
+@Table(name = "survey", indexes = {
+        @Index(name = "idx_survey_created_date_desc", columnList = "created_date DESC"),
+        @Index(name = "idx_survey_ended_date", columnList = "ended_date")
+})
 @Getter
+@SuperBuilder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Survey extends BaseTimeEntity {
 
@@ -65,10 +69,10 @@ public class Survey extends BaseTimeEntity {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime endedDate;
 
-    @Builder
     public Survey(Long authorId, String title, List<Question> questions,
         List<Participation> participations, String description, LocalDateTime startedDate,
         LocalDateTime endedDate) {
+        super();
         this.authorId = authorId;
         this.title = title;
         this.participations = participations;
