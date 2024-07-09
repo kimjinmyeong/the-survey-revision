@@ -1,13 +1,7 @@
 package com.thesurvey.api.config;
 
-import java.util.Arrays;
-import java.util.Collections;
-
-import javax.servlet.http.HttpServletResponse;
-
 import com.thesurvey.api.exception.AuthenticationEntryPointHandler;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -22,6 +16,10 @@ import org.springframework.security.web.authentication.logout.LogoutSuccessHandl
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import javax.servlet.http.HttpServletResponse;
+import java.util.Arrays;
+import java.util.Collections;
 
 
 @Configuration
@@ -47,7 +45,8 @@ public class SecurityConfiguration {
                     "/configuration/**",
                     "/swagger-ui.html",
                     "/swagger-ui/**",
-                    "/docs/**"
+                    "/docs/**",
+                    "/surveys"
                 ).permitAll()
                 .antMatchers("/admin/**").hasAuthority("ADMIN")
                 .antMatchers("/surveys/**").authenticated()
