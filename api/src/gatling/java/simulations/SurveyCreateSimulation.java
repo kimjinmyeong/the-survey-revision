@@ -10,7 +10,7 @@ import java.util.Map;
 import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.*;
 
-public class SurveySimulation extends Simulation {
+public class SurveyCreateSimulation extends Simulation {
 
     HttpProtocolBuilder httpProtocol = http
             .baseUrl("http://localhost:8080/v1") // Base URL of your Spring Boot application
@@ -38,24 +38,6 @@ public class SurveySimulation extends Simulation {
                     .body(RawFileBody("data/survey_request.json")).asJson()
                     .check(status().is(200))
                     .check(jsonPath("$.surveyId").saveAs("surveyId")));
-//            .exec(http("Get Specific Survey")
-//                    .get("1L")
-//                    .headers(headers)
-//                    .check(status().is(200))
-//                    .check(jsonPath("$.surveyId").is("${surveyId}"))
-//                    .check(jsonPath("$.title").is("This is test survey title"))
-//                    .check(jsonPath("$.startedDate").transform(date -> {
-//                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-//                        return LocalDateTime.parse(date, formatter).format(formatter);
-//                    }).is(LocalDateTime.now().plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))))
-//                    .check(jsonPath("$.endedDate").transform(date -> {
-//                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-//                        return LocalDateTime.parse(date, formatter).format(formatter);
-//                    }).is(LocalDateTime.now().plusDays(2).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"))))
-//                    .check(jsonPath("$.questions").exists())
-//                    .check(jsonPath("$.rewardPoints").is("1"))
-
-
     {
         setUp(scn.injectOpen(rampUsers(1).during(Duration.ofSeconds(10)))).protocols(httpProtocol);
     }
