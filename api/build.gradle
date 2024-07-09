@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '2.7.9'
     id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+    id 'io.gatling.gradle' version '3.9.3'
 }
 
 group = 'com.thesurvey'
@@ -11,6 +12,10 @@ description = "API Server Build"
 
 repositories {
     mavenCentral()
+}
+
+gatling {
+    jvmArgs = ['-Xms512M', '-Xmx512M']
 }
 
 dependencies {
@@ -27,6 +32,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
+    testImplementation 'io.gatling.highcharts:gatling-charts-highcharts:3.9.3'
+    testImplementation 'io.gatling:gatling-test-framework:3.9.3'
 }
 
 tasks.named('test') {
