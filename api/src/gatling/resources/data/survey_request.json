@@ -1,0 +1,25 @@
+{
+  "title": "카카오 사용자분들께 설문 부탁드립니다!",
+  "description": "카카오 앱 서비스에 대한 전반적인 만족도 조사입니다.",
+  "startedDate": "2099-07-09T06:17:27.905Z",
+  "endedDate": "2099-07-09T06:17:27.905Z",
+  "certificationTypes": [
+    "NAVER",
+    "KAKAO"
+  ],
+  "questions": [
+    {
+      "title": "카카오톡 서비스 사용자이신가요?",
+      "description": "카카오톡 사용자여부 확인",
+      "questionType": "SINGLE_CHOICE",
+      "questionNo": 1,
+      "isRequired": true,
+      "questionOptions": [
+        {
+          "option": "예",
+          "description": "사용자"
+        }
+      ]
+    }
+  ]
+}
