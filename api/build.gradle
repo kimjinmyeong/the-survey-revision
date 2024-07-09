@@ -34,7 +34,6 @@ dependencies {
     testImplementation 'com.h2database:h2'
     testImplementation 'io.gatling.highcharts:gatling-charts-highcharts:3.9.3'
     testImplementation 'io.gatling:gatling-test-framework:3.9.3'
-
 }
 
 tasks.named('test') {
