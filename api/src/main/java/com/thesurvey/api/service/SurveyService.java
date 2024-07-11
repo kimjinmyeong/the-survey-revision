@@ -170,7 +170,7 @@ public class SurveyService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = UserUtil.getUserFromAuthentication(authentication);
 
-//        validateCreateSurvey(surveyRequestDto, user);
+        validateCreateSurvey(surveyRequestDto, user);
 
         pointHistoryService.savePointHistory(user, -surveyCreatePoints);
         Survey survey = surveyRepository.save(surveyMapper.toSurvey(surveyRequestDto, user.getUserId()));
