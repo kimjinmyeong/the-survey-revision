@@ -18,7 +18,7 @@ public class PointHistory {
     private PointHistoryId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("userId")  // This is the name of the attribute in PointHistoryId
+    @MapsId("userId")
     @JoinColumn(name = "user_id")
     private User user;
 

@@ -82,8 +82,7 @@ public class GetAllSurveySimulation extends Simulation {
                 getAllSurveysScn.injectOpen(
                         nothingFor(5), // wait for 5 seconds to ensure surveys are created
                         atOnceUsers(1000), // simulate 1000 users concurrently fetching surveys
-                        rampUsers(5000).during(Duration.ofSeconds(300)) // ramp up to 5000 users over 5 minutes
-                ).protocols(httpProtocol)
+                        rampUsers(5000).during(Duration.ofSeconds(300))) // ramp up to 5000 users over 5 minutes
         ).protocols(httpProtocol);
     }
 }
