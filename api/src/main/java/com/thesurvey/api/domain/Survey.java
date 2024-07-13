@@ -14,7 +14,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "survey")
+@Table(name = "survey", indexes = {
+        @Index(name = "idx_survey_survey_id", columnList = "survey_id")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Survey extends BaseTimeEntity {
