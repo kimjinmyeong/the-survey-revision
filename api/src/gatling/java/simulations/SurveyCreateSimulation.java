@@ -19,7 +19,7 @@ public class SurveyCreateSimulation extends Simulation {
 
     Map<String, String> headers = Map.of("Content-Type", "application/json");
 
-    ScenarioBuilder scn = scenario("Survey Operations")
+    ScenarioBuilder scn = scenario("Survey Create Scenario")
             .exec(http("User Registration")
                     .post("/auth/register")
                     .headers(headers)
