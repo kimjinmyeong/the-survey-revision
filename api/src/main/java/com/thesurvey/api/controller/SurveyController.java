@@ -51,7 +51,7 @@ public class SurveyController {
         return ResponseEntity.ok(surveyService.getAllSurvey(page));
     }
 
-    @Operation(summary = "개별 설문조사 조회", description = "파라미터로 전달 받은 UUID에 해당하는 설문조사를 조회합니다.")
+    @Operation(summary = "개별 설문조사 조회", description = "파라미터로 전달 받은 ID에 해당하는 설문조사를 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "요청 성공"),
         @ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content(schema = @Schema(hidden = true))),
@@ -94,7 +94,7 @@ public class SurveyController {
             surveyService.updateSurvey(surveyUpdateRequestDto));
     }
 
-    @Operation(summary = "설문조사 삭제", description = "파라미터로 전달 받은 UUID에 해당하는 설문조사를 삭제합니다.")
+    @Operation(summary = "설문조사 삭제", description = "파라미터로 전달 받은 ID에 해당하는 설문조사를 삭제합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "요청 성공"),
         @ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content(schema = @Schema(hidden = true))),

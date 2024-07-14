@@ -1,44 +1,84 @@
 package simulations;
 
 import io.gatling.javaapi.core.ScenarioBuilder;
-import io.gatling.javaapi.core.Simulation;
-import io.gatling.javaapi.http.HttpProtocolBuilder;
 
 import java.time.Duration;
-import java.util.Map;
 
 import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.*;
 
-public class SurveyCreateSimulation extends Simulation {
+public class SurveyCreateSimulation extends BaseSimulation {
 
-    HttpProtocolBuilder httpProtocol = http
-            .baseUrl("http://localhost:8080/v1") // Base URL of your Spring Boot application
-            .contentTypeHeader("application/json")
-            .userAgentHeader("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36");
+    private final ScenarioBuilder createSurveyScn;
 
-    Map<String, String> headers = Map.of("Content-Type", "application/json");
+    public SurveyCreateSimulation() {
+        createSurveyScn = scenario("Create Survey Scenario")
+                .feed(feeder)
+                .exec(http("User Registration")
+                        .post("/auth/register")
+                        .headers(headers)
+                        .body(StringBody(session -> {
+                            int count = session.getInt("count");
+                            String name = "testUser" + count;
+                            String email = "testUser" + count + "@gmail.com";
+                            String password = "Password40@";
+                            String phoneNumber = "01012345678";
+                            return String.format("{\"name\":\"%s\",\"email\":\"%s\",\"password\":\"%s\",\"phoneNumber\":\"%s\"}", name, email, password, phoneNumber);
+                        })).asJson()
+                        .check(status().is(200)))
+                .pause(1)
+                .exec(http("User Login")
+                        .post("/auth/login")
+                        .headers(headers)
+                        .body(StringBody(session -> {
+                            String email = "testUser" + session.getInt("count") + "@gmail.com";
+                            String password = "Password40@";
+                            return String.format("{\"email\":\"%s\",\"password\":\"%s\"}", email, password);
+                        })).asJson()
+                        .check(status().is(200))
+                        .check(headerRegex("Set-Cookie", "JSESSIONID=(.*?);").saveAs("jsessionid")))
+                .pause(1)
+                .exec(http("Create Survey")
+                        .post("/surveys")
+                        .headers(headers)
+                        .body(RawFileBody("data/survey_request.json")).asJson()
+                        .check(status().is(200))
+                        .check(jsonPath("$.surveyId").saveAs("surveyId")));
+        String testType = System.getProperty("type");
+        setupSimulation(testType);
+    }
 
-    ScenarioBuilder scn = scenario("Survey Operations")
-            .exec(http("User Registration")
-                    .post("/auth/register")
-                    .headers(headers)
-                    .body(RawFileBody("data/register_request.json")).asJson()
-                    .check(status().is(200)))
-            .pause(1)
-            .exec(http("User Login")
-                    .post("/auth/login")
-                    .headers(headers)
-                    .body(RawFileBody("data/login_request.json")).asJson()
-                    .check(status().is(200)))
-            .pause(1)
-            .exec(http("Create Survey")
-                    .post("/surveys")
-                    .headers(headers)
-                    .body(RawFileBody("data/survey_request.json")).asJson()
-                    .check(status().is(200))
-                    .check(jsonPath("$.surveyId").saveAs("surveyId")));
-    {
-        setUp(scn.injectOpen(rampUsers(1).during(Duration.ofSeconds(10)))).protocols(httpProtocol);
+    @Override
+    public void loadTestingSetup() {
+        setUp(
+                createSurveyScn.injectOpen(
+                        atOnceUsers(1),
+                        nothingFor(5),
+                        atOnceUsers(1000),
+                        rampUsers(5000).during(Duration.ofSeconds(300))
+                )
+        ).protocols(httpProtocol);
+    }
+
+    @Override
+    public void stressTestingSetup() {
+        setUp(
+                createSurveyScn.injectOpen(
+                        atOnceUsers(1),
+                        nothingFor(5),
+                        rampUsers(10000).during(Duration.ofSeconds(600))
+                )
+        ).protocols(httpProtocol);
+    }
+
+    @Override
+    public void soakTestingSetup() {
+        setUp(
+                createSurveyScn.injectOpen(
+                        atOnceUsers(1),
+                        nothingFor(5),
+                        constantUsersPerSec(50).during(Duration.ofMinutes(30))
+                )
+        ).protocols(httpProtocol);
     }
 }

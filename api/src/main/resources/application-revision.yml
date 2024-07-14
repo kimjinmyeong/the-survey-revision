@@ -19,6 +19,13 @@ spring:
     url: jdbc:postgresql://localhost:5432/the_survey_revision
     username: the_survey_revision
     password: the_survey_revision
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 20
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 10000
+
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
