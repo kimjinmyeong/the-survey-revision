@@ -111,18 +111,56 @@ public class SurveySubmitAnswerSimulation extends Simulation {
                     .check(status().is(200))
             );
 
-    {
+    public void loadTestingSetup() {
         setUp(
                 createSurveysScn.injectOpen(atOnceUsers(1)),
                 submitSurveysScn.injectOpen(
-                        nothingFor(3), // wait for 3 seconds to ensure surveys are created
-                        atOnceUsers(1000), // simulate 1000 users concurrently fetching surveys
-                        rampUsers(1000).during(Duration.ofSeconds(300)) // ramp up to 1000 users over 5 minutes
+                        nothingFor(5),
+                        atOnceUsers(1000),
+                        rampUsers(5000).during(Duration.ofSeconds(300))
                 )
         ).protocols(httpProtocol);
     }
 
+    public void stressTestingSetup() {
+        setUp(
+                createSurveysScn.injectOpen(atOnceUsers(1)),
+                submitSurveysScn.injectOpen(
+                        nothingFor(5),
+                        rampUsers(10000).during(Duration.ofSeconds(600))
+                )
+        ).protocols(httpProtocol);
+    }
 
+    public void soakTestingSetup() {
+        setUp(
+                createSurveysScn.injectOpen(atOnceUsers(1)),
+                submitSurveysScn.injectOpen(
+                        nothingFor(5),
+                        constantUsersPerSec(50).during(Duration.ofMinutes(30))
+                )
+        ).protocols(httpProtocol);
+    }
 
+    {
+        String testType = System.getProperty("type");
+        if (testType == null) {
+            testType = "LOAD";
+        }
+
+        switch (testType.toUpperCase()) {
+            case "LOAD":
+                loadTestingSetup();
+                break;
+            case "STRESS":
+                stressTestingSetup();
+                break;
+            case "SOAK":
+                soakTestingSetup();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown type: " + testType);
+        }
+    }
 
 }
