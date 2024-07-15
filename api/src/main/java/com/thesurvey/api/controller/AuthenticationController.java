@@ -1,7 +1,5 @@
 package com.thesurvey.api.controller;
 
-import javax.validation.Valid;
-
 import com.thesurvey.api.dto.request.user.UserLoginRequestDto;
 import com.thesurvey.api.dto.request.user.UserRegisterRequestDto;
 import com.thesurvey.api.dto.response.user.UserResponseDto;
@@ -12,12 +10,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 @Tag(name = "인증", description = "Authentication Controller")
 @RestController
@@ -51,9 +47,18 @@ public class AuthenticationController {
         @ApiResponse(responseCode = "404", description = "요청한 리소스 찾을 수 없음", content = @Content(schema = @Schema(hidden = true)))
     })
     @PostMapping("/login")
-    public ResponseEntity<UserResponseDto> login(
-        @Valid @RequestBody UserLoginRequestDto userLoginRequestDto) {
-        UserResponseDto userResponseDto = authenticationService.login(userLoginRequestDto);
-        return ResponseEntity.ok(userResponseDto);
+    public void login(@RequestBody UserLoginRequestDto loginRequestDto) {
+        // This method is intentionally left empty because the login functionality
+        // is handled by the filter chain configuration in Spring Security.
+        // The LoginAuthenticationFilter will handle the actual login process.
+    }
+
+    @Operation(summary = "로그아웃", description = "로그아웃을 요청합니다.")
+    @ApiResponse(responseCode = "200", description = "요청 성공", useReturnTypeSchema = true)
+    @GetMapping("/logout")
+    public void logout() {
+        // This method is intentionally left empty because the logout functionality
+        // is handled by the filter chain configuration in Spring Security.
+        // The SecurityContextLogoutHandler will handle the actual logout process.
     }
 }
