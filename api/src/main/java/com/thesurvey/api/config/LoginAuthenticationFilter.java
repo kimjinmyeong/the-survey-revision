@@ -33,6 +33,7 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
         this.objectMapper = objectMapper;
     }
 
+    @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         try {
             UserLoginRequestDto userLoginRequestDto = new ObjectMapper().readValue(request.getInputStream(), UserLoginRequestDto.class);
@@ -43,7 +44,7 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
 
             return authenticationManager.authenticate(authToken);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UnauthorizedRequestExceptionMapper(ErrorMessage.FAILED_AUTHENTICATION);
         }
     }
 
