@@ -2,8 +2,6 @@ server:
   port: 8080
   servlet:
     context-path: /v1
-    session:
-      timeout: 10m
 
 springdoc:
   default-produces-media-type: "application/json"
