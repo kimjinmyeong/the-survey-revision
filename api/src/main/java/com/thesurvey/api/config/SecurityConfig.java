@@ -86,7 +86,6 @@ public class SecurityConfig {
                     configurer.maxSessionsPreventsLogin(true);
                 })
                 .and()
-//            .addFilterBefore(sessionFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
         // @formatter:on
     }
@@ -122,8 +121,6 @@ public class SecurityConfig {
     }
 
     private LogoutSuccessHandler logoutSuccessHandler() {
-        return (request, response, authentication) -> {
-            response.setStatus(HttpServletResponse.SC_OK);
-        };
+        return (request, response, authentication) -> response.setStatus(HttpServletResponse.SC_OK);
     }
 }
