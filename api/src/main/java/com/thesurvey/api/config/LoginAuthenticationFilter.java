@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thesurvey.api.dto.request.user.UserLoginRequestDto;
 import com.thesurvey.api.dto.response.user.UserResponseDto;
 import com.thesurvey.api.exception.ErrorMessage;
-import com.thesurvey.api.exception.mapper.UnauthorizedRequestExceptionMapper;
+import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
 import com.thesurvey.api.service.UserService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,18 +34,17 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) {
+        UserLoginRequestDto userLoginRequestDto = null;
         try {
-            UserLoginRequestDto userLoginRequestDto = new ObjectMapper().readValue(request.getInputStream(), UserLoginRequestDto.class);
-            String email = userLoginRequestDto.getEmail();
-            String password = userLoginRequestDto.getPassword();
-
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(email, password);
-
-            return authenticationManager.authenticate(authToken);
+            userLoginRequestDto = new ObjectMapper().readValue(request.getInputStream(), UserLoginRequestDto.class);
         } catch (IOException e) {
-            throw new UnauthorizedRequestExceptionMapper(ErrorMessage.FAILED_AUTHENTICATION);
+            throw new BadRequestExceptionMapper(ErrorMessage.INVALID_REQUEST);
         }
+        String email = userLoginRequestDto.getEmail();
+        String password = userLoginRequestDto.getPassword();
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(email, password);
+        return authenticationManager.authenticate(authToken);
     }
 
     @Override
@@ -54,7 +53,8 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         response.setStatus(HttpServletResponse.SC_OK);
-        response.setContentType("application/json; charset=UTF-8");
+        response.setContentType("application/json;");
+        response.setCharacterEncoding("UTF-8");
 
         UserResponseDto userResponseDto = userService.getUserByName(authentication.getName());
         String jsonResponse = objectMapper.writeValueAsString(userResponseDto);
@@ -65,8 +65,14 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-                                              AuthenticationException failed) {
-        throw new UnauthorizedRequestExceptionMapper(ErrorMessage.INVALID_CREDENTIALS);
+                                              AuthenticationException failed) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        PrintWriter writer = response.getWriter();
+        writer.write(ErrorMessage.INVALID_CREDENTIALS.getMessage());
+        writer.flush();
     }
 
 }
