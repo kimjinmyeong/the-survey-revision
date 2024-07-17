@@ -19,8 +19,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.List;
 
@@ -137,8 +140,9 @@ public class UserController {
     })
     @DeleteMapping
     public ResponseEntity<Void> deleteUser(
-            @Parameter(hidden = true) Authentication authentication) {
+            @Parameter(hidden = true) Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
         userService.deleteUser(authentication);
+        new SecurityContextLogoutHandler().logout(request, response, authentication);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

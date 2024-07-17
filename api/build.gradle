@@ -28,6 +28,8 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
     implementation 'org.postgresql:postgresql'
     implementation 'org.redisson:redisson:3.31.0'
+    implementation 'org.redisson:redisson-spring-data-27:3.32.0'
+    implementation 'org.springframework.session:spring-session-data-redis'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
