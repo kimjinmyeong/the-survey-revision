@@ -44,11 +44,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        final String CONTEXT_PATH = "/v1";
 
         LoginAuthenticationFilter loginAuthenticationFilter = new LoginAuthenticationFilter(
                 authenticationManager(http.getSharedObject(AuthenticationConfiguration.class)), userService, objectMapper);
-        loginAuthenticationFilter.setFilterProcessesUrl(CONTEXT_PATH + "/auth/login");
+        loginAuthenticationFilter.setFilterProcessesUrl("/auth/login");
 
         // @formatter:off
         return http
@@ -56,17 +55,17 @@ public class SecurityConfig {
                 .cors().and()
                 .authorizeRequests()
                 .antMatchers(
-                        CONTEXT_PATH + "/configuration/**",
-                        CONTEXT_PATH + "/swagger-ui.html",
-                        CONTEXT_PATH + "/swagger-ui/**",
-                        CONTEXT_PATH + "/docs/**"
+                        "/configuration/**",
+                        "/swagger-ui.html",
+                        "/swagger-ui/**",
+                        "/docs/**"
                 ).permitAll()
-                .antMatchers(CONTEXT_PATH + "/admin/**").hasAuthority("ADMIN")
-                .antMatchers(HttpMethod.GET, CONTEXT_PATH + "/surveys").permitAll()
-                .antMatchers(CONTEXT_PATH + "/surveys").authenticated()
-                .antMatchers(CONTEXT_PATH + "/surveys/**").authenticated()
-                .antMatchers(CONTEXT_PATH + "/users/**").authenticated()
-                .antMatchers(HttpMethod.OPTIONS, CONTEXT_PATH + "/**").permitAll()
+                .antMatchers("/admin/**").hasAuthority("ADMIN")
+                .antMatchers(HttpMethod.GET, "/surveys").permitAll()
+                .antMatchers("/surveys").authenticated()
+                .antMatchers("/surveys/**").authenticated()
+                .antMatchers("/users/**").authenticated()
+                .antMatchers(HttpMethod.OPTIONS,"/**").permitAll()
                 .anyRequest().permitAll()
                 .and()
                 .formLogin().disable()
@@ -74,7 +73,7 @@ public class SecurityConfig {
                 .exceptionHandling().authenticationEntryPoint(new AuthenticationEntryPointHandler())
                 .and()
                 .logout()
-                    .logoutUrl(CONTEXT_PATH + "/auth/logout")
+                    .logoutUrl("/auth/logout")
                     .permitAll()
                     .invalidateHttpSession(true)
                     .logoutSuccessHandler(logoutSuccessHandler())
