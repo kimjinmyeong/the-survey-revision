@@ -44,10 +44,11 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        final String CONTEXT_PATH = "/v1";
+
         LoginAuthenticationFilter loginAuthenticationFilter = new LoginAuthenticationFilter(
                 authenticationManager(http.getSharedObject(AuthenticationConfiguration.class)), userService, objectMapper);
-        loginAuthenticationFilter.setFilterProcessesUrl("/auth/login");
-        String CONTEXT_PATH = "/v1";
+        loginAuthenticationFilter.setFilterProcessesUrl(CONTEXT_PATH + "/auth/login");
 
         // @formatter:off
         return http
