@@ -1,11 +1,12 @@
 package com.thesurvey.api.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thesurvey.api.domain.User;
 import com.thesurvey.api.dto.request.user.UserLoginRequestDto;
 import com.thesurvey.api.dto.response.user.UserResponseDto;
 import com.thesurvey.api.exception.ErrorMessage;
 import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
-import com.thesurvey.api.service.UserService;
+import com.thesurvey.api.service.mapper.UserMapper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,19 +24,19 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
 
     private final AuthenticationManager authenticationManager;
 
-    private final UserService userService;
-
     private final ObjectMapper objectMapper;
 
-    public LoginAuthenticationFilter(AuthenticationManager authenticationManager, UserService userService, ObjectMapper objectMapper) {
+    private final UserMapper userMapper;
+
+    public LoginAuthenticationFilter(AuthenticationManager authenticationManager, ObjectMapper objectMapper, UserMapper userMapper) {
         this.authenticationManager = authenticationManager;
-        this.userService = userService;
         this.objectMapper = objectMapper;
+        this.userMapper = userMapper;
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) {
-        UserLoginRequestDto userLoginRequestDto = null;
+        UserLoginRequestDto userLoginRequestDto;
         try {
             userLoginRequestDto = new ObjectMapper().readValue(request.getInputStream(), UserLoginRequestDto.class);
         } catch (IOException e) {
@@ -56,7 +57,7 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
         response.setContentType("application/json;");
         response.setCharacterEncoding("UTF-8");
 
-        UserResponseDto userResponseDto = userService.getUserByName(authentication.getName());
+        UserResponseDto userResponseDto = userMapper.toUserResponseDto((User) authentication.getPrincipal());
         String jsonResponse = objectMapper.writeValueAsString(userResponseDto);
         PrintWriter writer = response.getWriter();
         writer.write(jsonResponse);
