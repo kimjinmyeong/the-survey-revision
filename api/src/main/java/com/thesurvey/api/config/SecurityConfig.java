@@ -5,7 +5,7 @@ import com.thesurvey.api.exception.AuthenticationEntryPointHandler;
 import com.thesurvey.api.exception.ErrorMessage;
 import com.thesurvey.api.exception.mapper.NotFoundExceptionMapper;
 import com.thesurvey.api.repository.UserRepository;
-import com.thesurvey.api.service.UserService;
+import com.thesurvey.api.service.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,7 +38,7 @@ public class SecurityConfig {
 
     private final UserRepository userRepository;
 
-    private final UserService userService;
+    private final UserMapper userMapper;
 
     private final ObjectMapper objectMapper;
 
@@ -46,7 +46,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         LoginAuthenticationFilter loginAuthenticationFilter = new LoginAuthenticationFilter(
-                authenticationManager(http.getSharedObject(AuthenticationConfiguration.class)), userService, objectMapper);
+                        authenticationManager(http.getSharedObject(AuthenticationConfiguration.class)), objectMapper, userMapper);
         loginAuthenticationFilter.setFilterProcessesUrl("/auth/login");
 
         // @formatter:off
