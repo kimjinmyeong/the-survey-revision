@@ -15,20 +15,15 @@ import java.time.LocalDateTime;
 public class PointHistory {
 
     @EmbeddedId
-    private PointHistoryId id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("userId")
-    @JoinColumn(name = "user_id")
-    private User user;
+    @AttributeOverride(name = "transactionDate", column = @Column(name = "transaction_date"))
+    private PointHistoryId pointHistoryId;
 
     @Column(name = "operand_point")
     private Integer operandPoint;
 
     @Builder
     public PointHistory(User user, LocalDateTime transactionDate, Integer operandPoint) {
-        this.id = new PointHistoryId(transactionDate, user.getUserId());
-        this.user = user;
+        this.pointHistoryId = new PointHistoryId(transactionDate, user);
         this.operandPoint = operandPoint;
     }
 

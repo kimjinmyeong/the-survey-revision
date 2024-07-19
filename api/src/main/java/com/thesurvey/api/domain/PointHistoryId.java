@@ -1,7 +1,9 @@
 package com.thesurvey.api.domain;
 
-import javax.persistence.Column;
 import javax.persistence.Embeddable;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -9,17 +11,17 @@ import java.util.Objects;
 @Embeddable
 public class PointHistoryId implements Serializable {
 
-    @Column(name = "transaction_date")
     private LocalDateTime transactionDate;
 
-    @Column(name = "user_id")
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    public User user;
 
     public PointHistoryId() {}
 
-    public PointHistoryId(LocalDateTime transactionDate, Long userId) {
+    public PointHistoryId(LocalDateTime transactionDate, User user) {
         this.transactionDate = transactionDate;
-        this.userId = userId;
+        this.user = user;
     }
 
     @Override
@@ -27,11 +29,11 @@ public class PointHistoryId implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PointHistoryId that = (PointHistoryId) o;
-        return transactionDate.equals(that.transactionDate) && userId.equals(that.userId);
+        return transactionDate.equals(that.transactionDate) && user.equals(that.user);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(transactionDate, userId);
+        return Objects.hash(transactionDate, user);
     }
 }
