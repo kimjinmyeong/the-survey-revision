@@ -30,6 +30,8 @@ dependencies {
     implementation 'org.redisson:redisson:3.31.0'
     implementation 'org.redisson:redisson-spring-data-27:3.32.0'
     implementation 'org.springframework.session:spring-session-data-redis'
+    implementation 'org.slf4j:slf4j-api:1.7.32'
+    implementation 'ch.qos.logback:logback-classic:1.2.11'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
