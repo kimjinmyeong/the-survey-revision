@@ -3,6 +3,7 @@ package com.thesurvey.api.repository;
 import com.thesurvey.api.domain.Question;
 import com.thesurvey.api.domain.QuestionId;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -23,4 +24,8 @@ public interface QuestionRepository extends JpaRepository<Question, QuestionId> 
 
     @Query("SELECT q.isRequired FROM Question q WHERE q.questionId.questionBank.questionBankId = :questionBankId")
     Optional<Boolean> findIsRequiredByQuestionBankId(Long questionBankId);
+
+    @Modifying
+    @Query("DELETE FROM Question q WHERE q.questionId.survey.surveyId = :surveyId")
+    void deleteBySurveyId(Long surveyId);
 }

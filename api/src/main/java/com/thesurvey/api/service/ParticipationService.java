@@ -1,7 +1,6 @@
 package com.thesurvey.api.service;
 
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
-import com.thesurvey.api.domain.Participation;
 import com.thesurvey.api.domain.Survey;
 import com.thesurvey.api.domain.User;
 import com.thesurvey.api.repository.ParticipationRepository;
@@ -31,7 +30,6 @@ public class ParticipationService {
 
     @Transactional
     public void deleteParticipation(Long surveyId) {
-        List<Participation> participationList = participationRepository.findAllBySurveyId(surveyId);
-        participationRepository.deleteAll(participationList);
+        participationRepository.deleteBySurveyId(surveyId);
     }
 }
