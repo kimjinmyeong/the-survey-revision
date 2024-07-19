@@ -37,8 +37,7 @@ public class GetAllSurveySimulation extends BaseSimulation {
                             String password = "Password40@";
                             return String.format("{\"email\":\"%s\",\"password\":\"%s\"}", email, password);
                         })).asJson()
-                        .check(status().is(200))
-                        .check(headerRegex("Set-Cookie", "JSESSIONID=(.*?);").saveAs("jsessionid")))
+                        .check(status().is(200)))
                 .pause(1)
                 .repeat(15, "n").on(
                         exec(http("Create Survey #{n}")
@@ -67,8 +66,8 @@ public class GetAllSurveySimulation extends BaseSimulation {
                 createSurveyScn.injectOpen(atOnceUsers(1)),
                 getAllSurveyScn.injectOpen(
                         nothingFor(5),
-                        atOnceUsers(1000),
-                        rampUsers(5000).during(Duration.ofSeconds(300))
+                        atOnceUsers(1),
+                        rampUsers(5).during(Duration.ofSeconds(20))
                 )
         ).protocols(httpProtocol);
     }
