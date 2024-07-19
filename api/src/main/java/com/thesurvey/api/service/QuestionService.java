@@ -137,8 +137,7 @@ public class QuestionService {
     @Transactional
     public void deleteQuestion(Long surveyId) {
         log.info("Deleting questions for survey ID: {}", surveyId);
-        List<Question> questionList = questionRepository.findAllBySurveyId(surveyId);
-        questionRepository.deleteAll(questionList);
+        questionRepository.deleteBySurveyId(surveyId);
         log.info("Questions deleted for survey ID: {}", surveyId);
     }
 }
