@@ -12,6 +12,7 @@ import com.thesurvey.api.repository.PointHistoryRepository;
 import com.thesurvey.api.repository.UserRepository;
 import com.thesurvey.api.service.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -28,6 +29,7 @@ import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthenticationService {
 
     private final UserDetailsService userDetailsService;
@@ -53,14 +55,22 @@ public class AuthenticationService {
 
     @Transactional
     public UserResponseDto register(UserRegisterRequestDto userRegisterRequestDto) {
+        log.info("Registering new user with email: {}", userRegisterRequestDto.getEmail());
+
         User user = userRepository.save(userMapper.toUser(userRegisterRequestDto));
+        log.info("User registered with ID: {}", user.getUserId());
+
         pointHistoryRepository.save(
-            PointHistory.builder()
-                .user(user)
-                .transactionDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
-                .build()
+                PointHistory.builder()
+                        .user(user)
+                        .transactionDate(LocalDateTime.now(ZoneId.of("Asia/Seoul")))
+                        .build()
         );
-        return userMapper.toUserResponseDto(user);
+        log.info("Point history created for user ID: {}", user.getUserId());
+
+        UserResponseDto userResponseDto = userMapper.toUserResponseDto(user);
+        log.info("Returning UserResponseDto for user ID: {}", user.getUserId());
+        return userResponseDto;
     }
 
     @Transactional(readOnly = true)
