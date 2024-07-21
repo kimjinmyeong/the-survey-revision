@@ -140,4 +140,9 @@ public class QuestionService {
         questionRepository.deleteBySurveyId(surveyId);
         log.info("Questions deleted for survey ID: {}", surveyId);
     }
+
+    @Transactional
+    public List<QuestionBank> getAllQuestionBanksBySurveyId(Long surveyId) {
+        return questionBankRepository.findAllBySurveyId(surveyId);
+    }
 }
