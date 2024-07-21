@@ -38,32 +38,39 @@ public class SaveAnswerCommand implements Command {
     public void execute() {
         boolean isAnswered = false;
         for (AnsweredQuestionDto answeredQuestionDto : answeredQuestionRequestDto.getAnswers()) {
+
+            // Check if the question is required and has an empty answer.
             if (answeredQuestionDto.getIsRequired() && validateEmptyAnswer(answeredQuestionDto)) {
                 throw new BadRequestExceptionMapper(ErrorMessage.NOT_ANSWER_TO_REQUIRED_QUESTION);
             }
+
+            // Set isAnswered to true if there is at least one non-empty answer.
             if (!isAnswered && !validateEmptyAnswer(answeredQuestionDto)) {
                 isAnswered = true;
             }
 
             QuestionBank questionBank = questionBankRepository.findByQuestionBankId(answeredQuestionDto.getQuestionBankId())
                     .orElseThrow(() -> new NotFoundExceptionMapper(ErrorMessage.QUESTION_BANK_NOT_FOUND));
-
             Optional<Question> question = questionRepository.findBySurveyIdAndQuestionBankId(survey.getSurveyId(), questionBank.getQuestionBankId());
             if (question.isEmpty()) {
                 throw new BadRequestExceptionMapper(ErrorMessage.NOT_SURVEY_QUESTION);
             }
 
+            // If there are no multiple choices, save the answered question
             if (answeredQuestionDto.getMultipleChoices() == null || answeredQuestionDto.getMultipleChoices().isEmpty()) {
                 answeredQuestionRepository.save(answeredQuestionMapper.toAnsweredQuestion(answeredQuestionDto, user, question.get()));
             } else {
+                // If there are multiple choices, map each choice to an answered question and save them all
                 List<AnsweredQuestion> answeredQuestionList = answeredQuestionDto.getMultipleChoices()
                         .stream()
                         .map(choice -> answeredQuestionMapper.toAnsweredQuestionWithMultipleChoices(user, question.get(), choice))
                         .collect(Collectors.toList());
                 answeredQuestionRepository.saveAll(answeredQuestionList);
             }
+            // Accumulate reward points based on the answered question
             rewardPoints += getQuestionBankRewardPoints(answeredQuestionDto);
         }
+        // Throw an exception if no question was answered
         if (!isAnswered) {
             throw new BadRequestExceptionMapper(ErrorMessage.ANSWER_AT_LEAST_ONE_QUESTION);
         }
