@@ -20,8 +20,7 @@ public class PointUtil {
         this.questionBankRepository = questionBankRepository;
     }
 
-    public int calculateSurveyCreatePoints(Long surveyId) {
-        List<QuestionBank> questionBankList = questionBankRepository.findAllBySurveyId(surveyId);
+    public static int calculateSurveyCreatePoints(List<QuestionBank> questionBankList) {
         int createPoints = 0;
         for (QuestionBank questionBank : questionBankList) {
             switch (questionBank.getQuestionType()) {
@@ -48,7 +47,7 @@ public class PointUtil {
         return createPoints;
     }
 
-    public int calculateSurveyMaxRewardPoints(QuestionType questionType) {
+    public static int calculateSurveyMaxRewardPoints(QuestionType questionType) {
         switch (questionType) {
             case SINGLE_CHOICE:
                 return SINGLE_CHOICE_REWARD.getTransactionPoint();
@@ -71,15 +70,14 @@ public class PointUtil {
      * {@code maxRewardPoints} is the amount of points a user get when they answer all the
      * questions in the survey.
      */
-    public int getSurveyMaxRewardPoints(Long surveyId) {
-        List<QuestionBank> questionBankList = questionBankRepository.findAllBySurveyId(surveyId);
+    public static int getSurveyMaxRewardPoints(List<QuestionBank> questionBankList) {
         int maxRewardPoints = questionBankList.stream()
             .mapToInt(questionBank -> calculateSurveyMaxRewardPoints(questionBank.getQuestionType()))
             .sum();
         return maxRewardPoints;
     }
 
-    public void validateUserPoint(int surveyCreatePoint, int userTotalPoint) {
+    public static void validateUserPoint(int surveyCreatePoint, int userTotalPoint) {
         if (userTotalPoint - surveyCreatePoint < 0) {
             throw new BadRequestExceptionMapper(ErrorMessage.SURVEY_CREATE_POINT_NOT_ENOUGH);
         }

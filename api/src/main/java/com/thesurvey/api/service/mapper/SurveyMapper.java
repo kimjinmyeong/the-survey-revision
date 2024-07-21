@@ -1,9 +1,7 @@
 package com.thesurvey.api.service.mapper;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
+import com.thesurvey.api.domain.QuestionBank;
 import com.thesurvey.api.domain.Survey;
 import com.thesurvey.api.dto.request.survey.SurveyRequestDto;
 import com.thesurvey.api.dto.response.question.QuestionBankAnswerDto;
@@ -17,9 +15,11 @@ import com.thesurvey.api.service.QuestionService;
 import com.thesurvey.api.service.converter.CertificationTypeConverter;
 import com.thesurvey.api.util.PointUtil;
 import com.thesurvey.api.util.StringUtil;
-
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class SurveyMapper {
@@ -42,7 +42,8 @@ public class SurveyMapper {
     }
 
     public SurveyResponseDto toSurveyResponseDto(Survey survey, Long authorId) {
-        int maxRewardPoints = pointUtil.getSurveyMaxRewardPoints(survey.getSurveyId());
+        List<QuestionBank> questionBankList = questionService.getAllQuestionBanksBySurveyId(survey.getSurveyId());
+        int maxRewardPoints = PointUtil.getSurveyMaxRewardPoints(questionBankList);
         List<QuestionBankResponseDto> questionBankResponseDtoList = questionService.getQuestionBankInfoDtoListBySurveyId(
             survey.getSurveyId());
         return SurveyResponseDto.builder()
@@ -72,7 +73,8 @@ public class SurveyMapper {
     }
 
     public SurveyPageDto toSurveyPageDto(Survey survey) {
-        int maxRewardPoints = pointUtil.getSurveyMaxRewardPoints(survey.getSurveyId());
+        List<QuestionBank> questionBankList = questionService.getAllQuestionBanksBySurveyId(survey.getSurveyId());
+        int maxRewardPoints = PointUtil.getSurveyMaxRewardPoints(questionBankList);
         return SurveyPageDto.builder()
             .surveyId(survey.getSurveyId())
             .authorId(survey.getAuthorId())
