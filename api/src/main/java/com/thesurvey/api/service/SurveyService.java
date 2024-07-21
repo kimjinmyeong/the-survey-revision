@@ -60,7 +60,6 @@ public class SurveyService {
     private final QuestionOptionMapper questionOptionMapper;
     private final QuestionBankMapper questionBankMapper;
     private final PointHistoryService pointHistoryService;
-    private final PointUtil pointUtil;
     private final AnsweredQuestionRepository answeredQuestionRepository;
     private final UserRepository userRepository;
 
