@@ -83,12 +83,11 @@ public class SurveySubmitAnswerSimulation extends BaseSimulation {
                             String password = "Password40@";
                             return String.format("{\"email\":\"%s\",\"password\":\"%s\"}", email, password);
                         })).asJson()
-                        .check(status().is(200))
-                        .check(headerRegex("Set-Cookie", "JSESSIONID=(.*?);").saveAs("jsessionid")))
+                        .check(status().is(200)))
                 .pause(1)
                 .exec(http("Submit Survey")
                         .post("/surveys/submit")
-                        .headers(Map.of("Content-Type", "application/json", "Cookie", "JSESSIONID=${jsessionid}"))
+                        .headers(Map.of("Content-Type", "application/json"))
                         .body(RawFileBody("data/submit_request.json")).asJson()
                         .check(status().is(200))
                 );

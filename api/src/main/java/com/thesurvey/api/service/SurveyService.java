@@ -22,6 +22,9 @@ import com.thesurvey.api.exception.mapper.NotFoundExceptionMapper;
 import com.thesurvey.api.repository.AnsweredQuestionRepository;
 import com.thesurvey.api.repository.SurveyRepository;
 import com.thesurvey.api.repository.UserRepository;
+import com.thesurvey.api.service.command.Command;
+import com.thesurvey.api.service.command.CommandExecutor;
+import com.thesurvey.api.service.command.SurveyCreateCommands.*;
 import com.thesurvey.api.service.mapper.QuestionBankMapper;
 import com.thesurvey.api.service.mapper.QuestionOptionMapper;
 import com.thesurvey.api.service.mapper.SurveyMapper;
@@ -57,7 +60,6 @@ public class SurveyService {
     private final QuestionOptionMapper questionOptionMapper;
     private final QuestionBankMapper questionBankMapper;
     private final PointHistoryService pointHistoryService;
-    private final PointUtil pointUtil;
     private final AnsweredQuestionRepository answeredQuestionRepository;
     private final UserRepository userRepository;
 
@@ -126,30 +128,33 @@ public class SurveyService {
     @Transactional
     public SurveyResponseDto createSurvey(SurveyRequestDto surveyRequestDto) {
         log.info("Creating new survey");
-        if (surveyRequestDto.getStartedDate().isBefore(LocalDateTime.now(ZoneId.of("Asia/Seoul")).minusSeconds(5))) {
-            log.error("Invalid started date: {}", surveyRequestDto.getStartedDate());
-            throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISBEFORE_CURRENTDATE);
-        }
 
-        if (surveyRequestDto.getStartedDate().isAfter(surveyRequestDto.getEndedDate())) {
-            log.error("Started date is after ended date: startedDate={}, endedDate={}", surveyRequestDto.getStartedDate(), surveyRequestDto.getEndedDate());
-            throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISAFTER_ENDEDDATE);
-        }
+        validateSurveyCreateDate(surveyRequestDto);
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = UserUtil.getUserFromAuthentication(authentication);
         List<CertificationType> certificationTypes = surveyRequestDto.getCertificationTypes().isEmpty() ? List.of(CertificationType.NONE) : surveyRequestDto.getCertificationTypes();
 
-        Survey survey = surveyRepository.save(surveyMapper.toSurvey(surveyRequestDto, user.getUserId()));
-        questionService.createQuestion(surveyRequestDto.getQuestions(), survey);
+        // Initialize commands
+        SaveSurveyCommand saveSurveyCommand = new SaveSurveyCommand(surveyRepository, surveyMapper, surveyRequestDto, user);
+        saveSurveyCommand.execute(); // Execute immediately to get the survey object
 
-        int surveyCreatePoints = pointUtil.calculateSurveyCreatePoints(survey.getSurveyId());
-        user.updatePoint(user.getPoint() - surveyCreatePoints);
-        userRepository.save(user);
-        pointUtil.validateUserPoint(surveyCreatePoints, user.getPoint());
+        Survey survey = saveSurveyCommand.getSurvey();
 
-        participationService.createParticipation(user, certificationTypes, survey);
-        pointHistoryService.savePointHistory(user, -surveyCreatePoints);
+        List<QuestionBank> questionBankList = questionService.getAllQuestionBankBySurveyId(survey.getSurveyId());
+        int surveyCreatePoints = PointUtil.calculateSurveyCreatePoints(questionBankList);
+
+        // Add commands to the executor
+        List<Command> commands = List.of(
+                new SaveQuestionsCommand(questionService, surveyRequestDto, survey),
+                new UpdateUserPointsCommand(userRepository, user, surveyCreatePoints),
+                new SaveParticipationCommand(participationService, user, certificationTypes, survey),
+                new SavePointHistoryCommand(pointHistoryService, user, surveyCreatePoints)
+        );
+
+        CommandExecutor executor = new CommandExecutor(commands);
+        executor.executeCommands();
+
         return surveyMapper.toSurveyResponseDto(survey, user.getUserId());
     }
 
@@ -164,8 +169,8 @@ public class SurveyService {
             log.error("Cannot delete survey ID {} because it has already started", surveyId);
             throw new BadRequestExceptionMapper(ErrorMessage.SURVEY_ALREADY_STARTED);
         }
-
-        int surveyCreatePoints = pointUtil.calculateSurveyCreatePoints(survey.getSurveyId());
+        List<QuestionBank> questionBankList = questionService.getAllQuestionBanksBySurveyId(surveyId);
+        int surveyCreatePoints = PointUtil.calculateSurveyCreatePoints(questionBankList);
         user.updatePoint(user.getPoint() + surveyCreatePoints);
         userRepository.save(user);
         pointHistoryService.savePointHistory(user, surveyCreatePoints);
@@ -196,6 +201,18 @@ public class SurveyService {
 
         questionService.updateQuestion(survey.getSurveyId(), surveyUpdateRequestDto.getQuestions());
         return surveyMapper.toSurveyResponseDto(survey, userId);
+    }
+
+    private void validateSurveyCreateDate(SurveyRequestDto surveyRequestDto) {
+        if (surveyRequestDto.getStartedDate().isBefore(LocalDateTime.now(ZoneId.of("Asia/Seoul")).minusSeconds(5))) {
+            log.error("Invalid started date: {}", surveyRequestDto.getStartedDate());
+            throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISBEFORE_CURRENTDATE);
+        }
+
+        if (surveyRequestDto.getStartedDate().isAfter(surveyRequestDto.getEndedDate())) {
+            log.error("Started date is after ended date: startedDate={}, endedDate={}", surveyRequestDto.getStartedDate(), surveyRequestDto.getEndedDate());
+            throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISAFTER_ENDEDDATE);
+        }
     }
 
     public void validateUpdateSurvey(Survey survey, SurveyUpdateRequestDto surveyUpdateRequestDto) {
