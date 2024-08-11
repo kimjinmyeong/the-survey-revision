@@ -8,44 +8,14 @@
   <h1 align="center">설문조사 플랫폼, the <span style="color:orange">s</span>urvey</h1>
 </p>
 
-<br/>   
-
-**프로젝트 개요**   
-&nbsp;&nbsp;'**the survey**' 는 간편한 인증 절차와 포인트 시스템을 통해 누구나 쉽게 설문조사를 진행하고 참여할 수 있는 웹 어플리케이션입니다. C2C(Customer to Customer) 타겟을 고려한 저렴한 비용과 높은 신뢰도를 바탕으로, 누구나 쉽게 사용할 수 있는 설문조사 서비스를 제공합니다.
-
-<br/>   
-
-## 목차
-<ul>
-  <li><a href="#프로젝트-소개">프로젝트 소개</a></li>
-  <li><a href="#프로젝트-구조도">프로젝트 </a></li>
-  <li><a href="#사용법">사용법</a></li>
-  <li><a href="#팀-소개">팀 소개</a></li>
-</ul>
-
-<br/>   
-
 ## 프로젝트 소개
-<img width="100%" alt="image" src="https://github.com/kookmin-sw/capstone-2023-40/assets/68771488/9a250cdf-b48f-4a20-9230-fb1c6207646d">
-&nbsp;&nbsp;
 
-먼저, '**the survey**'는 설문조사를 생성하고 참여할 수 있는 플랫폼입니다. 해당 서비스는 B2C, C2C, B2B 등 <u>**다양한 형태의 사용자들이 서로 자유롭게 설문조사를 생성하고 참여**</u>할 수 있는 환경을 제공합니다.
+'**the survey**'는 설문조사를 생성하고 참여할 수 있는 플랫폼입니다.
 
-&nbsp;&nbsp;또한, 설문을 생성한 사용자는, <u>**설문 참여에 설정한 필수 인증 과정**</u>을 통해, 원하는 참여자들을 바탕으로 <u>**신뢰성 높은 설문조사 결과**</u>를 얻을 수 있습니다.
-
-&nbsp;&nbsp;<u>**무분별한 설문조사 게시를 방지**</u>하기 위해, 게시를 위해서는 일정 포인트가 필요하며, <u>**설문조사 참여에 대한 보상**</u>으로 포인트를 얻을 수 있습니다. 또한, 적립된 포인트로, 새로운 설문조사를 생성하거나, 기프티콘과 같은 상품으로 교환할 수도 있습니다.
-
-<br/>   
+**무분별한 설문조사 게시를 방지**하기 위해, 게시를 위해서는 일정 포인트가 필요하며, <u>**설문조사 참여에 대한 보상**</u>으로 포인트를 얻을 수 있습니다.
 
 ## 프로젝트 구조도
-<img width="433" alt="스크린샷 2023-05-23 145116" src="https://github.com/kookmin-sw/capstone-2023-40/assets/68771488/8951e025-d888-4ab4-b2ae-02130a5c1bd6">
-
-<br/>   
-
-## 사용법
-
-- [소개 페이지 바로가기](https://kookmin-sw.github.io/capstone-2023-40/)
-- [the survey 이용하러 가기](https://www.thesurvey.kr/)
+![image](https://github.com/user-attachments/assets/93057075-bcca-4a56-bb23-e3d26a216507)
 
 <br/>   
 
