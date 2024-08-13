@@ -8,6 +8,9 @@
   <h1 align="center">설문조사 플랫폼, the <span style="color:orange">s</span>urvey</h1>
 </p>
 
+![image](https://github.com/user-attachments/assets/a477d2e8-5014-4b7b-ad9b-421fcc3930f5)
+
+
 ## 프로젝트 소개
 
 '**the survey**'는 설문조사를 생성하고 참여할 수 있는 플랫폼입니다.
