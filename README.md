@@ -18,7 +18,7 @@
 **무분별한 설문조사 게시를 방지**하기 위해, 게시를 위해서는 일정 포인트가 필요하며, <u>**설문조사 참여에 대한 보상**</u>으로 포인트를 얻을 수 있습니다.
 
 ## 프로젝트 구조도
-![image](https://github.com/user-attachments/assets/93057075-bcca-4a56-bb23-e3d26a216507)
+![image](https://github.com/user-attachments/assets/df603ec7-a43d-452f-9de6-eb392dce23a3)
 
 ## 구현된 기능
 
