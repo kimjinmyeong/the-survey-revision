@@ -2,8 +2,6 @@ server:
   port: 8080
   servlet:
     context-path: /v1
-    session:
-      timeout: 10m
 
 springdoc:
   default-produces-media-type: "application/json"
@@ -15,10 +13,20 @@ springdoc:
     disabled: true
 
 spring:
+  session:
+    store-type: redis
+    timeout: 3600
   datasource:
     url: jdbc:postgresql://localhost:5432/the_survey_revision
     username: the_survey_revision
     password: the_survey_revision
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 20
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 10000
+
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -38,5 +46,13 @@ spring:
 
 logging:
   level:
-    org.hibernate.sql: debug
-    org.hibernate.type.descriptor.sql: trace
+    org.hibernate.sql: info
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,loggers,prometheus
+  endpoint:
+    health:
+      show-details: always

@@ -35,7 +35,6 @@ public class User extends BaseTimeEntity implements UserDetails {
 
     @OneToMany(
         mappedBy = "participationId.user",
-        cascade = CascadeType.ALL,
         orphanRemoval = true
     )
     private List<Participation> participations;
@@ -49,14 +48,12 @@ public class User extends BaseTimeEntity implements UserDetails {
 
     @OneToMany(
         mappedBy = "userCertificationId.user",
-        cascade = CascadeType.ALL,
         orphanRemoval = true
     )
     private List<UserCertification> userCertifications;
 
     @OneToMany(
-        mappedBy = "user",
-        cascade = CascadeType.ALL,
+        mappedBy = "pointHistoryId.user",
         orphanRemoval = true
     )
     private List<PointHistory> pointHistories;

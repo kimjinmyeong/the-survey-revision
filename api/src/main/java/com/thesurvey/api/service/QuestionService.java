@@ -19,6 +19,7 @@ import com.thesurvey.api.service.mapper.QuestionMapper;
 import com.thesurvey.api.service.mapper.QuestionOptionMapper;
 import com.thesurvey.api.util.StringUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,84 +29,92 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class QuestionService {
 
     private final QuestionBankRepository questionBankRepository;
-
     private final QuestionBankMapper questionBankMapper;
-
     private final QuestionRepository questionRepository;
-
     private final QuestionMapper questionMapper;
-
     private final QuestionOptionService questionOptionService;
-
     private final QuestionOptionMapper questionOptionMapper;
-
     private final QuestionOptionRepository questionOptionRepository;
 
     @Transactional(readOnly = true)
     public List<QuestionBank> getAllQuestionBankBySurveyId(Long surveyId) {
+        log.info("Fetching all question banks for survey ID: {}", surveyId);
         return questionBankRepository.findAllBySurveyId(surveyId);
     }
 
     @Transactional(readOnly = true)
     public List<QuestionBankResponseDto> getQuestionBankInfoDtoListBySurveyId(Long surveyId) {
+        log.info("Fetching question bank info DTO list for survey ID: {}", surveyId);
         return questionBankRepository.findAllBySurveyId(surveyId)
-            .stream()
-            .map(questionBank -> {
-                List<QuestionOption> questionOptionList = questionOptionRepository
-                    .findAllByQuestionBankId(questionBank.getQuestionBankId());
+                .stream()
+                .map(questionBank -> {
+                    List<QuestionOption> questionOptionList = questionOptionRepository
+                            .findAllByQuestionBankId(questionBank.getQuestionBankId());
 
-                List<QuestionOptionResponseDto> questionOptionResponseDtoList = questionOptionList
-                    .stream()
-                    .map(questionOptionMapper::toQuestionOptionResponseDto)
-                    .collect(Collectors.toList());
+                    List<QuestionOptionResponseDto> questionOptionResponseDtoList = questionOptionList
+                            .stream()
+                            .map(questionOptionMapper::toQuestionOptionResponseDto)
+                            .collect(Collectors.toList());
 
-                return questionBankMapper.toQuestionBankResponseDto(questionBank,
-                    questionOptionResponseDtoList);
-            })
-            .collect(Collectors.toList());
+                    return questionBankMapper.toQuestionBankResponseDto(questionBank,
+                            questionOptionResponseDtoList);
+                })
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public Integer getQuestionNoByQuestionBankId(Long questionBankId) {
+        log.info("Fetching question number for question bank ID: {}", questionBankId);
         return questionRepository.findQuestionNoByQuestionBankId(questionBankId).orElseThrow(
-            () -> new NotFoundExceptionMapper(ErrorMessage.QUESTION_NOT_FOUND)
+                () -> {
+                    log.error("Question not found for question bank ID: {}", questionBankId);
+                    return new NotFoundExceptionMapper(ErrorMessage.QUESTION_NOT_FOUND);
+                }
         );
     }
 
     @Transactional
     public void createQuestion(List<QuestionRequestDto> questionRequestDtoList, Survey survey) {
+        log.info("Creating questions for survey ID: {}", survey.getSurveyId());
         for (QuestionRequestDto questionRequestDto : questionRequestDtoList) {
             QuestionBank questionBank = questionBankRepository.save(
-                questionBankMapper.toQuestionBank(questionRequestDto));
+                    questionBankMapper.toQuestionBank(questionRequestDto));
 
             questionRepository.save(questionMapper.toQuestion(questionRequestDto, survey,
-                questionBank));
+                    questionBank));
 
             if (questionRequestDto.getQuestionOptions() != null) {
                 questionOptionService.createQuestionOption(questionRequestDto, questionBank);
             }
         }
+        log.info("Questions created for survey ID: {}", survey.getSurveyId());
     }
 
     @Transactional
     public void updateQuestion(Long surveyId,
-        List<QuestionBankUpdateRequestDto> questionBankUpdateRequestDtoList) {
+                               List<QuestionBankUpdateRequestDto> questionBankUpdateRequestDtoList) {
+        log.info("Updating questions for survey ID: {}", surveyId);
         for (QuestionBankUpdateRequestDto questionBankUpdateRequestDto : questionBankUpdateRequestDtoList) {
             QuestionBank questionBank = questionBankRepository.findByQuestionBankId(
-                questionBankUpdateRequestDto.getQuestionBankId()).orElseThrow(
-                () -> new BadRequestExceptionMapper(ErrorMessage.QUESTION_BANK_NOT_FOUND));
+                    questionBankUpdateRequestDto.getQuestionBankId()).orElseThrow(
+                    () -> {
+                        log.error("Question bank not found with ID: {}", questionBankUpdateRequestDto.getQuestionBankId());
+                        return new BadRequestExceptionMapper(ErrorMessage.QUESTION_BANK_NOT_FOUND);
+                    });
 
             Optional<Question> question = questionRepository.findBySurveyIdAndQuestionBankId(surveyId, questionBank.getQuestionBankId());
             if (question.isEmpty()) {
+                log.error("Question not found for survey ID: {} and question bank ID: {}", surveyId, questionBank.getQuestionBankId());
                 throw new BadRequestExceptionMapper(ErrorMessage.QUESTION_NOT_FOUND);
             }
 
             questionBank.changeTitle(StringUtil.trim(questionBankUpdateRequestDto.getTitle()));
             questionBank.changeDescription(
-                StringUtil.trim(questionBankUpdateRequestDto.getDescription()));
+                    StringUtil.trim(questionBankUpdateRequestDto.getDescription()));
 
             if (questionBankUpdateRequestDto.getQuestionType() != null) {
                 questionBank.changeQuestionType(questionBankUpdateRequestDto.getQuestionType());
@@ -119,15 +128,21 @@ public class QuestionService {
             }
             if (questionBankUpdateRequestDto.getQuestionOptions() != null) {
                 questionOptionService.updateQuestionOption(questionBank.getQuestionBankId(),
-                    questionBankUpdateRequestDto.getQuestionOptions());
+                        questionBankUpdateRequestDto.getQuestionOptions());
             }
         }
+        log.info("Questions updated for survey ID: {}", surveyId);
     }
 
     @Transactional
     public void deleteQuestion(Long surveyId) {
-        List<Question> questionList = questionRepository.findAllBySurveyId(surveyId);
-        questionRepository.deleteAll(questionList);
+        log.info("Deleting questions for survey ID: {}", surveyId);
+        questionRepository.deleteBySurveyId(surveyId);
+        log.info("Questions deleted for survey ID: {}", surveyId);
     }
 
+    @Transactional
+    public List<QuestionBank> getAllQuestionBanksBySurveyId(Long surveyId) {
+        return questionBankRepository.findAllBySurveyId(surveyId);
+    }
 }

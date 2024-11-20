@@ -14,21 +14,16 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PointHistory {
 
-    @Id
-    @Column(name = "transaction_date")
-    private LocalDateTime transactionDate;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @EmbeddedId
+    @AttributeOverride(name = "transactionDate", column = @Column(name = "transaction_date"))
+    private PointHistoryId pointHistoryId;
 
     @Column(name = "operand_point")
     private Integer operandPoint;
 
     @Builder
     public PointHistory(User user, LocalDateTime transactionDate, Integer operandPoint) {
-        this.transactionDate = transactionDate;
-        this.user = user;
+        this.pointHistoryId = new PointHistoryId(transactionDate, user);
         this.operandPoint = operandPoint;
     }
 

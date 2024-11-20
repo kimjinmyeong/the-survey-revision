@@ -1,0 +1,11 @@
+{
+  "answers": [
+    {
+      "questionBankId": 1,
+      "isRequired": true,
+      "questionType": "SINGLE_CHOICE",
+      "singleChoice": 1
+    }
+  ],
+  "surveyId": 1
+}

@@ -1,11 +1,10 @@
 package com.thesurvey.api.service.converter;
 
+import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
+import org.springframework.context.annotation.Configuration;
+
 import java.util.List;
 import java.util.stream.Collectors;
-
-import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
-
-import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class CertificationTypeConverter {
@@ -16,7 +15,7 @@ public class CertificationTypeConverter {
      * @param certificationTypeList List converted from CertificationType to Integer in db.
      * @return convertedCertificationTypeList List converted from Integer to CertificationType.
      */
-    public List<CertificationType> toCertificationTypeList(List<Integer> certificationTypeList) {
+    public static List<CertificationType> toCertificationTypeList(List<Integer> certificationTypeList) {
         return certificationTypeList.stream()
             .map(type -> {
                 switch (type) {
@@ -33,7 +32,7 @@ public class CertificationTypeConverter {
                     case 6:
                         return CertificationType.IDENTITY_CARD;
                     default:
-                        return null;
+                        return CertificationType.NONE;
                 }
             })
             .collect(Collectors.toList());
