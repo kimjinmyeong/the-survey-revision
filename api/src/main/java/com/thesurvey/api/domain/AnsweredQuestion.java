@@ -46,7 +46,7 @@ public class AnsweredQuestion {
 
     @Builder
     public AnsweredQuestion(Long singleChoice, Long multipleChoice, String shortAnswer,
-        String longAnswer, Question question, User user) {
+                            String longAnswer, Question question, User user) {
         this.shortAnswer = shortAnswer;
         this.longAnswer = longAnswer;
         this.singleChoice = singleChoice;

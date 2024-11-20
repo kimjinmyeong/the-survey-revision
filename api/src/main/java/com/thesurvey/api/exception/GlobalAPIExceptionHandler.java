@@ -1,23 +1,17 @@
 package com.thesurvey.api.exception;
 
-import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
-import com.thesurvey.api.exception.mapper.ForbiddenRequestExceptionMapper;
-import com.thesurvey.api.exception.mapper.NotFoundExceptionMapper;
-import com.thesurvey.api.exception.mapper.UnauthorizedRequestExceptionMapper;
-
-import java.util.Objects;
-
-import javax.validation.ConstraintViolationException;
-import javax.validation.UnexpectedTypeException;
-
+import com.thesurvey.api.exception.mapper.*;
 import org.postgresql.util.PSQLException;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import javax.validation.ConstraintViolationException;
+import javax.validation.UnexpectedTypeException;
+import java.util.Objects;
 
 @RestControllerAdvice
 public class GlobalAPIExceptionHandler {
@@ -103,5 +97,15 @@ public class GlobalAPIExceptionHandler {
         HttpMessageNotReadableException error) {
         return ResponseEntity.badRequest().body("유효하지 않은 요청 메시지입니다.");
     }
+
+    /**
+     * Handles the exception thrown by LockTimeoutException.
+     * This exception is thrown when a lock cannot be acquired within the specified timeout period.
+     */
+    @ExceptionHandler(LockTimeoutExceptionMapper.class)
+    public ResponseEntity<String> handleLockTimeoutException(LockTimeoutExceptionMapper error) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error.getMessage());
+    }
+
 }
 
