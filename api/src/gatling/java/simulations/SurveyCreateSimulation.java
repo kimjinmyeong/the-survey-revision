@@ -35,8 +35,7 @@ public class SurveyCreateSimulation extends BaseSimulation {
                             String password = "Password40@";
                             return String.format("{\"email\":\"%s\",\"password\":\"%s\"}", email, password);
                         })).asJson()
-                        .check(status().is(200))
-                        .check(headerRegex("Set-Cookie", "JSESSIONID=(.*?);").saveAs("jsessionid")))
+                        .check(status().is(200)))
                 .pause(1)
                 .exec(http("Create Survey")
                         .post("/surveys")
