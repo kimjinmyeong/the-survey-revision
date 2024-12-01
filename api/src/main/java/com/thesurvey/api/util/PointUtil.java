@@ -4,7 +4,6 @@ import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
 import com.thesurvey.api.domain.QuestionBank;
 import com.thesurvey.api.exception.ErrorMessage;
 import com.thesurvey.api.exception.mapper.BadRequestExceptionMapper;
-import com.thesurvey.api.repository.QuestionBankRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -14,37 +13,22 @@ import static com.thesurvey.api.domain.EnumTypeEntity.PointTransactionType.*;
 @Component
 public class PointUtil {
 
-    private final QuestionBankRepository questionBankRepository;
-
-    public PointUtil(QuestionBankRepository questionBankRepository) {
-        this.questionBankRepository = questionBankRepository;
-    }
-
-    public static int calculateSurveyCreatePoints(List<QuestionBank> questionBankList) {
-        int createPoints = 0;
-        for (QuestionBank questionBank : questionBankList) {
-            switch (questionBank.getQuestionType()) {
+    public static int calculateSurveyCreatePoints(QuestionType questionType) {
+            switch (questionType) {
                 case SINGLE_CHOICE:
-                    createPoints += SINGLE_CHOICE_CONSUME.getTransactionPoint();
-                    break;
+                    return SINGLE_CHOICE_CONSUME.getTransactionPoint();
 
                 case MULTIPLE_CHOICES:
-                    createPoints += MULTIPLE_CHOICES_CONSUME.getTransactionPoint();
-                    break;
+                    return MULTIPLE_CHOICES_CONSUME.getTransactionPoint();
 
                 case SHORT_ANSWER:
-                    createPoints += SHORT_ANSWER_CONSUME.getTransactionPoint();
-                    break;
+                    return SHORT_ANSWER_CONSUME.getTransactionPoint();
 
                 case LONG_ANSWER:
-                    createPoints += LONG_ANSWER_CONSUME.getTransactionPoint();
-                    break;
-
+                    return LONG_ANSWER_CONSUME.getTransactionPoint();
                 default:
                     throw new BadRequestExceptionMapper(ErrorMessage.INVALID_QUESTION_TYPE);
-            }
         }
-        return createPoints;
     }
 
     public static int calculateSurveyMaxRewardPoints(QuestionType questionType) {
@@ -71,10 +55,9 @@ public class PointUtil {
      * questions in the survey.
      */
     public static int getSurveyMaxRewardPoints(List<QuestionBank> questionBankList) {
-        int maxRewardPoints = questionBankList.stream()
+        return questionBankList.stream()
             .mapToInt(questionBank -> calculateSurveyMaxRewardPoints(questionBank.getQuestionType()))
             .sum();
-        return maxRewardPoints;
     }
 
     public static void validateUserPoint(int surveyCreatePoint, int userTotalPoint) {
