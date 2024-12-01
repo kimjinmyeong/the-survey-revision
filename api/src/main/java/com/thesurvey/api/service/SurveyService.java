@@ -70,8 +70,6 @@ public class SurveyService {
 
     private final PointHistoryService pointHistoryService;
 
-    private final PointUtil pointUtil;
-
     private final AnsweredQuestionRepository answeredQuestionRepository;
 
     private final UserRepository userRepository;
@@ -160,7 +158,7 @@ public class SurveyService {
     @CacheEvict(value = "surveyListCache", allEntries = true)
     public SurveyResponseDto createSurvey(SurveyRequestDto surveyRequestDto) {
         int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
-                .mapToInt(questionRequestDto -> pointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
+                .mapToInt(questionRequestDto -> PointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
                 .sum();
 
         List<CertificationType> certificationTypes =
@@ -196,7 +194,7 @@ public class SurveyService {
 
         List<QuestionBank> questionBankList = questionBankRepository.findAllBySurveyId(surveyId);
         int surveyCreatePoints = questionBankList.stream()
-                .mapToInt(questionBank -> pointUtil.calculateSurveyCreatePoints(questionBank.getQuestionType()))
+                .mapToInt(questionBank -> PointUtil.calculateSurveyCreatePoints(questionBank.getQuestionType()))
                 .sum();
         user.updatePoint(user.getPoint() + surveyCreatePoints);
         userRepository.save(user);
@@ -272,7 +270,7 @@ public class SurveyService {
     private void validateCreateSurvey(SurveyRequestDto surveyRequestDto, User user) {
         validateSurveyDates(surveyRequestDto);
         int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
-                .mapToInt(questionRequestDto -> pointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
+                .mapToInt(questionRequestDto -> PointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
                 .sum();
         validateUserPoint(user, surveyCreatePoints);
         validateRecentSurveyCreation(user);
