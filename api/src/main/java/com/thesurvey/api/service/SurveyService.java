@@ -1,12 +1,7 @@
 package com.thesurvey.api.service;
 
-import com.thesurvey.api.annotation.Lockable;
-import com.thesurvey.api.domain.AnsweredQuestion;
-import com.thesurvey.api.domain.EnumTypeEntity.CertificationType;
+import com.thesurvey.api.domain.*;
 import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
-import com.thesurvey.api.domain.QuestionBank;
-import com.thesurvey.api.domain.Survey;
-import com.thesurvey.api.domain.User;
 import com.thesurvey.api.dto.request.survey.SurveyRequestDto;
 import com.thesurvey.api.dto.request.survey.SurveyUpdateRequestDto;
 import com.thesurvey.api.dto.response.question.QuestionBankAnswerDto;
@@ -38,10 +33,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -75,6 +68,8 @@ public class SurveyService {
     private final UserRepository userRepository;
 
     private final QuestionBankRepository questionBankRepository;
+
+    private final SurveyTransactionService surveyTransactionService;
 
     @Transactional(readOnly = true)
     @Cacheable(value = "surveyListCache", key = "#page")
@@ -153,28 +148,15 @@ public class SurveyService {
         return surveyMapper.toUserSurveyResultDto(survey, questionBankAnswerDtoList);
     }
 
-    @Lockable(key = "createSurveyLock")
-    @Transactional(isolation = Isolation.READ_COMMITTED)
-    @CacheEvict(value = "surveyListCache", allEntries = true)
+//    @Lockable(key = "createSurveyLock")
     public SurveyResponseDto createSurvey(SurveyRequestDto surveyRequestDto) {
-        int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
-                .mapToInt(questionRequestDto -> PointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
-                .sum();
-
-        List<CertificationType> certificationTypes =
+        List<EnumTypeEntity.CertificationType> certificationTypes =
                 surveyRequestDto.getCertificationTypes().isEmpty()
-                        ? List.of(CertificationType.NONE) : surveyRequestDto.getCertificationTypes();
+                        ? List.of(EnumTypeEntity.CertificationType.NONE) : surveyRequestDto.getCertificationTypes();
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = UserUtil.getUserFromAuthentication(authentication);
-
-        validateCreateSurvey(surveyRequestDto, user);
-
-        pointHistoryService.savePointHistory(user, -surveyCreatePoints);
-        Survey survey = surveyRepository.save(surveyMapper.toSurvey(surveyRequestDto, user.getUserId()));
-        questionService.createQuestion(surveyRequestDto.getQuestions(), survey);
-        participationService.createParticipation(user, certificationTypes, survey);
-        return surveyMapper.toSurveyResponseDto(survey, user.getUserId());
+        return surveyTransactionService.createSurveyTransactional(surveyRequestDto, user, certificationTypes);
     }
 
     @Transactional
@@ -257,50 +239,6 @@ public class SurveyService {
             throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISBEFORE_CURRENTDATE);
         }
 
-    }
-
-    public void validateUserPoint(User user, Integer surveyCreatePoints) {
-        if (user.getPoint() - surveyCreatePoints < 0) {
-            throw new BadRequestExceptionMapper(ErrorMessage.SURVEY_CREATE_POINT_NOT_ENOUGH);
-        }
-        user.updatePoint(user.getPoint() - surveyCreatePoints);
-        userRepository.saveAndFlush(user);
-    }
-
-    private void validateCreateSurvey(SurveyRequestDto surveyRequestDto, User user) {
-        validateSurveyDates(surveyRequestDto);
-        int surveyCreatePoints = surveyRequestDto.getQuestions().stream()
-                .mapToInt(questionRequestDto -> PointUtil.calculateSurveyCreatePoints(questionRequestDto.getQuestionType()))
-                .sum();
-        validateUserPoint(user, surveyCreatePoints);
-        validateRecentSurveyCreation(user);
-    }
-
-    private void validateSurveyDates(SurveyRequestDto surveyRequestDto) {
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
-
-        // Validate that the survey's start date is not more than 5 seconds in the past.
-        if (surveyRequestDto.getStartedDate().isBefore(now.minusSeconds(5))) {
-            throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISBEFORE_CURRENTDATE);
-        }
-
-        // Validate that the survey's start date is not after its end date.
-        if (surveyRequestDto.getStartedDate().isAfter(surveyRequestDto.getEndedDate())) {
-            throw new BadRequestExceptionMapper(ErrorMessage.STARTEDDATE_ISAFTER_ENDEDDATE);
-        }
-    }
-
-    private void validateRecentSurveyCreation(User user) {
-        List<Survey> surveys = surveyRepository.findUserCreatedSurveysByAuthorID(user.getUserId());
-        if (surveys.isEmpty()) {
-            return;
-        }
-        LocalDateTime userRecentCreateTime = surveys.get(surveys.size() - 1).getCreatedDate();
-        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
-        Duration duration = Duration.between(userRecentCreateTime, now);
-        if (duration.getSeconds() < 30) {
-            throw new BadRequestExceptionMapper(ErrorMessage.USER_CREATE_SURVEY_RECENT);
-        }
     }
 
     private void validateSurveyAuthor(Long userId, Long authorId) {
