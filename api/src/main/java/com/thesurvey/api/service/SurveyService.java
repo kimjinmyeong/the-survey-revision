@@ -1,6 +1,5 @@
 package com.thesurvey.api.service;
 
-import com.thesurvey.api.annotation.Lockable;
 import com.thesurvey.api.domain.*;
 import com.thesurvey.api.domain.EnumTypeEntity.QuestionType;
 import com.thesurvey.api.dto.request.survey.SurveyRequestDto;
@@ -149,7 +148,7 @@ public class SurveyService {
         return surveyMapper.toUserSurveyResultDto(survey, questionBankAnswerDtoList);
     }
 
-    @Lockable(key = "createSurveyLock")
+//    @Lockable(key = "createSurveyLock")
     public SurveyResponseDto createSurvey(SurveyRequestDto surveyRequestDto) {
         List<EnumTypeEntity.CertificationType> certificationTypes =
                 surveyRequestDto.getCertificationTypes().isEmpty()
